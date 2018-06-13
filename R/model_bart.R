@@ -332,6 +332,7 @@ model_bart  <- function(formula, data, type, base = NULL,
                            "ntrees" = ntrees,
                            "burn" = burn,
                            "ndraws" = ndraws,
+                           "releveled" = relvelved,
                            "type" = "multinomial"), length(res))
     
     

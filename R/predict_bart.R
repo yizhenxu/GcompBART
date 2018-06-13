@@ -166,16 +166,20 @@ predict_bart  <- function(obj, newdata = NULL, Gcomp = FALSE)
       treefit = cbind(treefit, res$vec_test)
     }
     
-    tmp = c(t(treefit)) # z_draw_id_dim: e.g. dim = 2, (z111,z112,z121,z122,..., z nd n 1, z nd n 2)
+    sigmas = matrix(obj$sigmasample, nrow = (obj$ndim)^2, ncol = testn)
     
-    res =   mympbartpred(as.integer(obj$ndim),
-                       as.integer(testn),
-                       as.integer(ndraws),
-                       tmp, 
-                       obj$sigmasample, 
-                       obj$working_param,
-                       as.integer(obj$maxy))
-    samp_y = matrix(res$samp_y, nrow = testn)
+    samp_y = lapply(1:ndraws, function(j) getYhat_bart(j, obj$ndim, testn, obj$releveled, obj$maxy, treefit, sigmas))
+    samp_y = simplify2array(samp_y)
+    #tmp = c(t(treefit)) # z_draw_id_dim: e.g. dim = 2, (z111,z112,z121,z122,..., z nd n 1, z nd n 2)
+    
+    #res =   mympbartpred(as.integer(obj$ndim),
+    #                   as.integer(testn),
+    #                   as.integer(ndraws),
+    #                   tmp, 
+    #                   obj$sigmasample, 
+    #                   obj$working_param,
+    #                   as.integer(obj$maxy))
+    #samp_y = matrix(res$samp_y, nrow = testn)
     
   }
     
