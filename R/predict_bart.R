@@ -166,7 +166,7 @@ predict_bart  <- function(obj, newdata = NULL, Gcomp = FALSE)
       treefit = cbind(treefit, res$vec_test)
     }
     
-    sigmas = matrix(obj$sigmasample, nrow = (obj$ndim)^2, ncol = testn)
+    sigmas = matrix(obj$sigmasample, nrow = (obj$ndim)^2, ncol = ndraws)
     
     samp_y = lapply(1:ndraws, function(j) getYhat_bart(j, obj$ndim, testn, obj$releveled, obj$maxy, treefit, sigmas))
 
