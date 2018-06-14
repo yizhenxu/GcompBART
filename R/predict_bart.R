@@ -6,6 +6,7 @@
 #'@param Gcomp Make predictions in the format of dynamic G-computation if TRUE; the default is FALSE,
 #'@return treefit ndraws x n posterior matrix of the sum of trees fit,
 #'@return samp_y ndraws x n posterior matrix of the simulated outcome,
+#'@return samp_treefit ndraws x n posterior matrix of predicted outcome based only on the sum of trees fit; this is only for type equals "multinomial",
 #'@examples
 #'##simulate data (example from Friedman MARS paper)
 #'f = function(x){
@@ -171,6 +172,14 @@ predict_bart  <- function(obj, newdata = NULL, Gcomp = FALSE)
     samp_y = lapply(1:ndraws, function(j) getYhat_bart(j, obj$ndim, testn, obj$releveled, obj$maxy, treefit, sigmas))
 
     samp_y = simplify2array(samp_y)
+    
+    pclass = max.col(treefit)
+    maxw = apply(treefit,1,max)
+    pclass[which(maxw<0)] = obj$maxy
+    
+    samp_treefit =  obj$releveled[pclass] #vector of length n
+    samp_treefit = matrix(samp_treefit, nrow = testn)
+    
     #tmp = c(t(treefit)) # z_draw_id_dim: e.g. dim = 2, (z111,z112,z121,z122,..., z nd n 1, z nd n 2)
     
     #res =   mympbartpred(as.integer(obj$ndim),
@@ -184,9 +193,15 @@ predict_bart  <- function(obj, newdata = NULL, Gcomp = FALSE)
     
   }
     
+  if(obj$type == "multinomial"){
+    ret = list(treefit = treefit,
+               samp_y = samp_y,
+               samp_treefit = samp_treefit);
+  } else {
+    ret = list(treefit = treefit,
+               samp_y = samp_y);
+  }
   
-  ret = list(treefit = treefit,
-             samp_y = samp_y);
   
   return(ret)
   

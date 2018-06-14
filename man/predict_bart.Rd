@@ -17,6 +17,8 @@ predict_bart(obj, newdata = NULL, Gcomp = FALSE)
 treefit ndraws x n posterior matrix of the sum of trees fit,
 
 samp_y ndraws x n posterior matrix of the simulated outcome,
+
+samp_treefit ndraws x n posterior matrix of predicted outcome based only on the sum of trees fit; this is only for type equals "multinomial",
 }
 \description{
 Predicted values based on Bayesian Additive Regression Trees model object,
