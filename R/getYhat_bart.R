@@ -12,9 +12,10 @@
 #'@import MASS bayesm mlbench mlogit cvTools stats
 #'@export
 
-getYhat_bart = function(j, ndim, n, releveled, maxy, mu, sigmas){
+getYhat_bart = function(j, ndim, n, releveled, maxy, mu, sigmas, alpha){
   
   mu_j = mu[(n*(j-1)+1):(n*j),]
+  mu_j = mu_j / alpha
   Sig_j = matrix(sigmas[,j],ncol = ndim)
   # generate mvnorm by mean equals to vector of zeros, then translate to mean at mu_j
   tmp = mvrnorm(n, rep(0, ndim), Sig_j)

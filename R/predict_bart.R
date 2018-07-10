@@ -169,7 +169,7 @@ predict_bart  <- function(obj, newdata = NULL, Gcomp = FALSE)
     
     sigmas = matrix(obj$sigmasample, nrow = (obj$ndim)^2, ncol = ndraws)
     
-    samp_y = lapply(1:ndraws, function(j) getYhat_bart(j, obj$ndim, testn, obj$releveled, obj$maxy, treefit, sigmas))
+    samp_y = lapply(1:ndraws, function(j) getYhat_bart(j, obj$ndim, testn, obj$releveled, obj$maxy, treefit, sigmas, obj$working_param[j]))
 
     samp_y = simplify2array(samp_y)
     
