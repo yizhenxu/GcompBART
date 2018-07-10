@@ -4,7 +4,7 @@
 \alias{getYhat_bart}
 \title{Map fitted latents to categorical prediction}
 \usage{
-getYhat_bart(j, ndim, n, releveled, maxy, mu, sigmas)
+getYhat_bart(j, ndim, n, releveled, maxy, mu, sigmas, alpha)
 }
 \arguments{
 \item{j}{Index of the current round of posterior draws,}

@@ -463,7 +463,7 @@ List mympbartmod(NumericMatrix XMat,
   for(size_t i=0; i<di.n_samp; i++){
     for(size_t k=0; k < di.n_dim; k++){
       
-      mu[i*di.n_dim + k] = allfit[k][i]/sqrt(alpha2); //divide allfit this to transform
+      mu[i*di.n_dim + k] = allfit[k][i]/sqrt(alpha2old); //divide allfit this to transform
       w[i*di.n_dim +k] = allfit[k][i]/sqrt(alpha2old) + (wtilde[k][i]-allfit[k][i]) /sqrt(alpha2) ;
     }
   }
@@ -482,7 +482,7 @@ List mympbartmod(NumericMatrix XMat,
   
   if(loop>=burn){
     
-    wp[loop-burn] = sqrt(alpha2);
+    wp[loop-burn] = sqrt(alpha2old);
     
     if(dgn){
       for(size_t k=0;k<di.n_dim;k++){
