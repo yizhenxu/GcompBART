@@ -25,10 +25,11 @@
 #'#'The components of Mcmc are
 #' \itemize{
 #'\item sigma0 : The starting value of the covariance matrix of latent variables.
-#'\item nSigDr: User-specified upper limit to repeated draws of the covariance variance matrix of latent variables in each round of posterior draw when condition 10 in Jiao and van Dyk 2015 is not satisfied. Default 50. Setting this value to 1 is equivalent to not applying the correction from Jiao and van Dyk 2015.
+#'\item nSigDr: User-specified upper limit to repeated draws of the covariance variance matrix of latent variables in each round of posterior draw when condition 10 in Jiao and van Dyk 2015 is not satisfied. Default 50. 
 #'}
 #'@param diagnostics Returns convergence diagnostics and variable inclusion proportions if True (default),
 #'@param make.prediction Returns simulated outcome samp_y if TRUE (default); FALSE is only applicable to continuous and binary outcomes,
+#'@param correction Analysis applies correction from Jiao and van Dyk (2015) if TRUE (default); framework from Burgette and Nordheim (2012) is used if FALSE,
 #'@return treefit ndraws x n posterior matrix of the training data sum of trees fit,
 #'@return samp_y ndraws x n posterior matrix of the simulated outcome,
 #'@return sigmasample posterior samples of the error standard deviation.
@@ -65,7 +66,7 @@
 #'@useDynLib GcompBART
 model_bart  <- function(formula, data, type, base = NULL,
                       Prior = NULL, Mcmc = NULL, diagnostics = 
-                        TRUE, make.prediction = TRUE)
+                        TRUE, make.prediction = TRUE, correction = TRUE)
 {
   
   callT <- match.call(expand.dots = TRUE)
@@ -300,7 +301,7 @@ model_bart  <- function(formula, data, type, base = NULL,
                            "type" = "binary"), length(res))
     
   } else if(type == "multinomial"){
-    res =   mympbartmod(Data$X, 
+    res =   mympbartmod(Data$X,
                         sigmai,
                         V,
                         as.integer(nu),
@@ -321,7 +322,9 @@ model_bart  <- function(formula, data, type, base = NULL,
                        as.integer(nc),
                        as.integer(minobsnode),
                        binaryX,
-                       as.integer(diagnostics))
+                       as.integer(diagnostics),
+                       as.integer(correction))
+    
     colnames(res$Inclusion_Proportions) = xcolnames
     
     relvelved = as.numeric(relvelved)

@@ -62,8 +62,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // mympbartmod
-List mympbartmod(NumericMatrix XMat, NumericMatrix sigmai1, NumericMatrix V1, int nu, int nn, int nndim, NumericVector y1, int n_cov, int nd, int burn, int numtrees, int nSigDr, double kfac, double pswap, double pbd, double pb, double alpha, double beta, int nc, int minobs, NumericVector binaryX, int dgn);
-RcppExport SEXP _GcompBART_mympbartmod(SEXP XMatSEXP, SEXP sigmai1SEXP, SEXP V1SEXP, SEXP nuSEXP, SEXP nnSEXP, SEXP nndimSEXP, SEXP y1SEXP, SEXP n_covSEXP, SEXP ndSEXP, SEXP burnSEXP, SEXP numtreesSEXP, SEXP nSigDrSEXP, SEXP kfacSEXP, SEXP pswapSEXP, SEXP pbdSEXP, SEXP pbSEXP, SEXP alphaSEXP, SEXP betaSEXP, SEXP ncSEXP, SEXP minobsSEXP, SEXP binaryXSEXP, SEXP dgnSEXP) {
+List mympbartmod(NumericMatrix XMat, NumericMatrix sigmai1, NumericMatrix V1, int nu, int nn, int nndim, NumericVector y1, int n_cov, int nd, int burn, int numtrees, int nSigDr, double kfac, double pswap, double pbd, double pb, double alpha, double beta, int nc, int minobs, NumericVector binaryX, int dgn, int Jiao);
+RcppExport SEXP _GcompBART_mympbartmod(SEXP XMatSEXP, SEXP sigmai1SEXP, SEXP V1SEXP, SEXP nuSEXP, SEXP nnSEXP, SEXP nndimSEXP, SEXP y1SEXP, SEXP n_covSEXP, SEXP ndSEXP, SEXP burnSEXP, SEXP numtreesSEXP, SEXP nSigDrSEXP, SEXP kfacSEXP, SEXP pswapSEXP, SEXP pbdSEXP, SEXP pbSEXP, SEXP alphaSEXP, SEXP betaSEXP, SEXP ncSEXP, SEXP minobsSEXP, SEXP binaryXSEXP, SEXP dgnSEXP, SEXP JiaoSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -89,7 +89,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< int >::type minobs(minobsSEXP);
     Rcpp::traits::input_parameter< NumericVector >::type binaryX(binaryXSEXP);
     Rcpp::traits::input_parameter< int >::type dgn(dgnSEXP);
-    rcpp_result_gen = Rcpp::wrap(mympbartmod(XMat, sigmai1, V1, nu, nn, nndim, y1, n_cov, nd, burn, numtrees, nSigDr, kfac, pswap, pbd, pb, alpha, beta, nc, minobs, binaryX, dgn));
+    Rcpp::traits::input_parameter< int >::type Jiao(JiaoSEXP);
+    rcpp_result_gen = Rcpp::wrap(mympbartmod(XMat, sigmai1, V1, nu, nn, nndim, y1, n_cov, nd, burn, numtrees, nSigDr, kfac, pswap, pbd, pb, alpha, beta, nc, minobs, binaryX, dgn, Jiao));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -151,7 +152,7 @@ END_RCPP
 static const R_CallMethodDef CallEntries[] = {
     {"_GcompBART_mybartmod", (DL_FUNC) &_GcompBART_mybartmod, 20},
     {"_GcompBART_mybartpred", (DL_FUNC) &_GcompBART_mybartpred, 16},
-    {"_GcompBART_mympbartmod", (DL_FUNC) &_GcompBART_mympbartmod, 22},
+    {"_GcompBART_mympbartmod", (DL_FUNC) &_GcompBART_mympbartmod, 23},
     {"_GcompBART_mympbartpred", (DL_FUNC) &_GcompBART_mympbartpred, 7},
     {"_GcompBART_mypbartmod", (DL_FUNC) &_GcompBART_mypbartmod, 17},
     {"_GcompBART_rcpp_hello_world", (DL_FUNC) &_GcompBART_rcpp_hello_world, 0},

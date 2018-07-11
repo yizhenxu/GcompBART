@@ -5,7 +5,7 @@
 \title{Bayesian Additive Regression Trees}
 \usage{
 model_bart(formula, data, type, base = NULL, Prior = NULL, Mcmc = NULL,
-  diagnostics = TRUE, make.prediction = TRUE)
+  diagnostics = TRUE, make.prediction = TRUE, correction = TRUE)
 }
 \arguments{
 \item{formula}{response ~ covariates,}
@@ -37,12 +37,14 @@ The components of Prior are
 #'The components of Mcmc are
 \itemize{
 \item sigma0 : The starting value of the covariance matrix of latent variables.
-\item nSigDr: User-specified upper limit to repeated draws of the covariance variance matrix of latent variables in each round of posterior draw when condition 10 in Jiao and van Dyk 2015 is not satisfied. Default 50. Setting this value to 1 is equivalent to not applying the correction from Jiao and van Dyk 2015.
+\item nSigDr: User-specified upper limit to repeated draws of the covariance variance matrix of latent variables in each round of posterior draw when condition 10 in Jiao and van Dyk 2015 is not satisfied. Default 50. 
 }}
 
 \item{diagnostics}{Returns convergence diagnostics and variable inclusion proportions if True (default),}
 
 \item{make.prediction}{Returns simulated outcome samp_y if TRUE (default); FALSE is only applicable to continuous and binary outcomes,}
+
+\item{correction}{Analysis applies correction from Jiao and van Dyk (2015) if TRUE (default); framework from Burgette and Nordheim (2012) is used if FALSE,}
 }
 \value{
 treefit ndraws x n posterior matrix of the training data sum of trees fit,

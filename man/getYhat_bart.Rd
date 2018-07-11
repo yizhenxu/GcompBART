@@ -17,9 +17,11 @@ getYhat_bart(j, ndim, n, releveled, maxy, mu, sigmas, alpha)
 
 \item{maxy}{The index of the reference level from within the multinomial probit BART core,}
 
-\item{mu}{Sum of trees fit in 2 dimensions - (n x ndraws) x ndim,}
+\item{mu}{Sum of trees fit for the unscaled latent variables in 2 dimensions - (n x ndraws) x ndim,}
 
 \item{sigmas}{Posteriors of the covariance matrix in 2 dimensions - (ndim x ndim) x ndraws; the jth column is the covariance matrix estimated from jth round of posterior draw by column,}
+
+\item{alpha}{The estimated working parameter for scaling the sum of trees fit,}
 }
 \value{
 yhat Simulated outcome as a vector of length n,

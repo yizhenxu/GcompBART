@@ -35,22 +35,25 @@ List mympbartmod(NumericMatrix XMat,
                 int nc,
                 int minobs,
                 NumericVector binaryX,
-                int dgn) {
+                int dgn,
+                int Jiao) {
   
   size_t m = (size_t) numtrees;
   
   dinfo di;
   di.n_samp = (size_t)nn; di.n_cov = (size_t)n_cov; di.n_dim = (size_t)nndim;
   
-  std::vector<double> V, sigmai;
+  std::vector<double> V, sigmai, sigmaiTilde;
   
   V.resize(nndim*nndim);
   sigmai.resize(nndim*nndim);
+  sigmaiTilde.resize(nndim*nndim);
   int itemp = 0;
   for(int i = 0; i < nndim; i++){
     for(int j = 0; j < nndim; j++){
       V[itemp] = V1(i,j);
       sigmai[itemp] = sigmai1(i,j);
+      sigmaiTilde[itemp] = sigmai1(i,j);
       itemp++;
     }
   }
@@ -336,6 +339,13 @@ List mympbartmod(NumericMatrix XMat,
     }
   }
   
+  /* Step 1 (d) */
+  for(size_t j=0;j<di.n_dim;j++){
+    for(size_t k=0;k<di.n_dim;k++){
+      sigmaiTilde[j*di.n_dim + k] = sigmai[j*di.n_dim + k]/alpha2;
+    }
+  }
+  
   //done sampling alpha2, w
   
   /* Step 2 */
@@ -351,14 +361,14 @@ List mympbartmod(NumericMatrix XMat,
     
     
     //get pseudo response
-    getpseudoresponse(di, ftemp[ntree], rtemp, &sigmai[0], r,condsig);
+    getpseudoresponse(di, ftemp[ntree], rtemp, &sigmaiTilde[0], r,condsig);
     //condsig[k] is sqrt psi_k
     
     
     
     for(size_t k=0; k<di.n_dim; k++){
       di.y = &r[k][0];
-      pi.sigma = sqrt(alpha2) * condsig[k]; //sqrt psi_k tilde
+      pi.sigma = condsig[k]; //sqrt psi_k tilde
       
       if(dgn){
         bd1(XMat, t[ntree][k], xi, di, pi, minobsnode, binaryX, &nLtDtmp[k][ntree], &percAtmp[k][ntree], &numNodestmp[k][ntree], &numLeavestmp[k][ntree], &treeDepthtmp[k][ntree], incProptmp[k], L1[k], L2[k], L3[k], L4[k], L5[k], L6[k], L7[k], L8[k]);
@@ -406,73 +416,102 @@ List mympbartmod(NumericMatrix XMat,
   /* keep the old alpha2 from step 1 sampling (w,alpha)*/
   alpha2old = alpha2;
   
-  //correction from Jiao & van Dyk 2015
-  check_temp = 0;
-  itercnt = 1;
-  
-  while(check_temp != di.n_samp && itercnt<= nSigDr){
+  if(Jiao){
+    //correction from Jiao & van Dyk 2015
+    check_temp = 0;
+    itercnt = 1;
     
+    while(check_temp != di.n_samp && itercnt<= nSigDr){
+      
+      /* Step 3 (a) */
+      // generate inverse Sigma
+      rWish(WishSampleTildeInv, WishMat1Inv, (int)(nu+di.n_samp),(int)di.n_dim);
+      // invert to get Sigma
+      dinv(WishSampleTildeInv ,di.n_dim, WishSampleTilde);
+      
+      // now check condition 10
+      
+      /* Step 3 (b) */
+      // definition of zir needs new alpha2 based on Sigma, alpha2 = trace(Sigma)/p, y has p+1 levels
+      alpha2 = 0;
+      for(size_t j=0; j< di.n_dim; j++) alpha2 += (WishSampleTilde[j][j])/double(di.n_dim);
+      
+      /* Step 3 (c) */
+      // difine zir
+      for(size_t i=0;i<di.n_samp;i++){
+        for(size_t j=0;j<di.n_dim;j++){
+          zir[j][i] = wtilde[j][i]- (1 - sqrt(alpha2/alpha2old))* allfit[j][i]; //see pseudocode for explanation
+        }
+      }
+      // condition 10 should exist for every training sample
+      check_temp = 0;// count samples that satisfies
+      for(size_t i=0;i<di.n_samp;i++){
+        
+        max_zir = R_NegInf;
+        for(size_t j=0;j<di.n_dim;j++){
+          if(zir[j][i] > max_zir){
+            max_zir = zir[j][i];
+            max_class_zir = j+1;
+          }
+        }
+        if(max_zir <= 0){
+          max_class_zir = (size_t)maxy;
+        }
+        if((size_t)y[i] == max_class_zir){
+          check_temp++;
+        }
+      }
+      
+      itercnt++;
+    }//while
+    
+    if(itercnt>= nSigDr){
+      std::cout << "\n iteration on Sigma reached upper limit\n";
+    }
+    //correction end
+  } else {
     /* Step 3 (a) */
-    // generate inverse Sigma
+    // generate inverse Sigma Tilde
     rWish(WishSampleTildeInv, WishMat1Inv, (int)(nu+di.n_samp),(int)di.n_dim);
-    // invert to get Sigma
+    // invert to get Sigma Tilde
     dinv(WishSampleTildeInv ,di.n_dim, WishSampleTilde);
-    
-    // now check condition 10
     
     /* Step 3 (b) */
     // definition of zir needs new alpha2 based on Sigma, alpha2 = trace(Sigma)/p, y has p+1 levels
     alpha2 = 0;
-    for(size_t j=0; j< di.n_dim; j++) alpha2 += (WishSampleTilde[j][j])/double(di.n_dim);
+    for(size_t j=0; j< di.n_dim; j++) alpha2 += (WishSampleTilde[j][j]);
+    alpha2 = alpha2/double(di.n_dim);
     
-    /* Step 3 (c) */
-    // difine zir
-    for(size_t i=0;i<di.n_samp;i++){
-      for(size_t j=0;j<di.n_dim;j++){
-        zir[j][i] = wtilde[j][i]- (1 - sqrt(alpha2/alpha2old))* allfit[j][i]; //see pseudocode for explanation
-      }
-    }
-    // condition 10 should exist for every training sample
-    check_temp = 0;// count samples that satisfies
-    for(size_t i=0;i<di.n_samp;i++){
-      
-      max_zir = R_NegInf;
-      for(size_t j=0;j<di.n_dim;j++){
-        if(zir[j][i] > max_zir){
-          max_zir = zir[j][i];
-          max_class_zir = j+1;
-        }
-      }
-      if(max_zir <= 0){
-        max_class_zir = (size_t)maxy;
-      }
-      if((size_t)y[i] == max_class_zir){
-        check_temp++;
-      }
-    }
-    
-    itercnt++;
-  }//while
-  
-  if(itercnt>= nSigDr){
-    std::cout << "\n iteration on Sigma reached upper limit\n";
   }
-  //correction end
+  
   
   /* Step 3 (e) and (f) */
-  for(size_t i=0; i<di.n_samp; i++){
-    for(size_t k=0; k < di.n_dim; k++){
-      
-      mu[i*di.n_dim + k] = allfit[k][i]/sqrt(alpha2old); //divide allfit this to transform
-      w[i*di.n_dim +k] = allfit[k][i]/sqrt(alpha2old) + (wtilde[k][i]-allfit[k][i]) /sqrt(alpha2) ;
+  if(Jiao){
+    
+    for(size_t i=0; i<di.n_samp; i++){
+      for(size_t k=0; k < di.n_dim; k++){
+        mu[i*di.n_dim + k] = allfit[k][i]/sqrt(alpha2old); //divide allfit this to transform
+        w[i*di.n_dim +k] = allfit[k][i]/sqrt(alpha2old) + (wtilde[k][i]-allfit[k][i]) /sqrt(alpha2) ;
+      }
     }
+    
+  } else {
+    
+    for(size_t i=0; i<di.n_samp; i++){
+      for(size_t k=0; k < di.n_dim; k++){
+        mu[i*di.n_dim + k] = allfit[k][i]/sqrt(alpha2); //divide allfit to transform
+        w[i*di.n_dim +k] = wtilde[k][i]/sqrt(alpha2);
+      }
+    }
+    
   }
   
   /* Step 3 (d) */
   for(size_t j=0;j<di.n_dim;j++){
     for(size_t k=0;k<di.n_dim;k++){
       sigmai[j*di.n_dim + k] = WishSampleTildeInv[j][k]*alpha2;
-      SigmaTmpInv[j][k] = WishSampleTildeInv[j][k]*alpha2;
+      //SigmaTmpInv[j][k] = WishSampleTildeInv[j][k]*alpha2;
+      SigmaTmp[j][k] = WishSampleTilde[j][k]/alpha2;
       if(loop>=burn){
         sigmasample[sigdrawcounter++] = WishSampleTilde[j][k]/alpha2;
       }
@@ -482,7 +521,12 @@ List mympbartmod(NumericMatrix XMat,
   
   if(loop>=burn){
     
-    wp[loop-burn] = sqrt(alpha2old);
+    if(Jiao){
+      wp[loop-burn] = sqrt(alpha2old);
+    } else {
+      wp[loop-burn] = sqrt(alpha2);
+    }
+    
     
     if(dgn){
       for(size_t k=0;k<di.n_dim;k++){
@@ -508,7 +552,7 @@ List mympbartmod(NumericMatrix XMat,
       }//k
     }//dgn
     
-    dinv(SigmaTmpInv ,di.n_dim,SigmaTmp);
+    //dinv(SigmaTmpInv ,di.n_dim,SigmaTmp);
     for(size_t k = 0; k <di.n_samp; k++){
       max_temp = R_NegInf;
       for(size_t l=0; l<di.n_dim; l++){
