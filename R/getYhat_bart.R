@@ -24,7 +24,7 @@ getYhat_bart = function(j, ndim, n, releveled, maxy, mu, sigmas, alpha){
   
   pclass = max.col(tmp)
   maxw = apply(tmp,1,max)
-  pclass[which(maxw<0)] = maxy
+  pclass[which(maxw<=0)] = maxy
   
   yhat =  releveled[pclass] #vector of length n
   return(yhat)

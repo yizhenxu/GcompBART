@@ -4,6 +4,7 @@
 #'@param obj Fitted model object from BART_mod,
 #'@param newdata The data matrix to look for variables with which to predict, typically without the response; if Gcomp equals TRUE, number of rows should equal n x ndraws, where n is the number of subject. For the ith subject, (i, i+n, ..., i+(ndraws-1)n) rows are its simulated posterior outcomes from the previous simulation,
 #'@param Gcomp Make predictions in the format of dynamic G-computation if TRUE; the default is FALSE,
+#'@param mppred Use mympbartpred.cpp instead of the original version,
 #'@return treefit ndraws x n posterior matrix of the sum of trees fit,
 #'@return samp_y ndraws x n posterior matrix of the simulated outcome,
 #'@return samp_treefit ndraws x n posterior matrix of predicted outcome based only on the sum of trees fit; this is only for type equals "multinomial",
@@ -34,7 +35,7 @@
 #'@import bayesm mlbench mlogit cvTools stats
 #'@export
 #'@useDynLib GcompBART
-predict_bart  <- function(obj, newdata = NULL, Gcomp = FALSE)
+predict_bart  <- function(obj, newdata = NULL, Gcomp = FALSE, mppred = TRUE)
 {
   if(is.data.frame(newdata)) newdata = as.matrix(newdata)
   
@@ -136,60 +137,102 @@ predict_bart  <- function(obj, newdata = NULL, Gcomp = FALSE)
     
   } else {
     
-    treefit = c()
-    
-    for(i in 1:(obj$ndim)){
-      Lk1 = obj$TreeMod[[1]][[i]]
-      Lk2 = obj$TreeMod[[2]][[i]]
-      Lk3 = obj$TreeMod[[3]][[i]]
-      Lk4 = obj$TreeMod[[4]][[i]]
-      Lk5 = obj$TreeMod[[5]][[i]]
-      Lk6 = obj$TreeMod[[6]][[i]]
-      Lk7 = obj$TreeMod[[7]][[i]]
-      Lk8 = obj$TreeMod[[8]][[i]]
+    if(mppred == FALSE){
+      treefit = c()
       
-      res =   mybartpred(Gcomp,
-                         Lk1,
-                         Lk2,
-                         Lk3,
-                         Lk4,
-                         Lk5,
-                         Lk6,
-                         Lk7,
-                         Lk8,
-                         Xtest,
-                         as.integer(ncol(Xtest)),
-                         as.integer(testn),
-                         as.integer(ndraws),
-                         as.integer(burn),
-                         as.integer(ntrees),
-                         xi)
-      treefit = cbind(treefit, res$vec_test)
+      for(i in 1:(obj$ndim)){
+        Lk1 = obj$TreeMod[[1]][[i]]
+        Lk2 = obj$TreeMod[[2]][[i]]
+        Lk3 = obj$TreeMod[[3]][[i]]
+        Lk4 = obj$TreeMod[[4]][[i]]
+        Lk5 = obj$TreeMod[[5]][[i]]
+        Lk6 = obj$TreeMod[[6]][[i]]
+        Lk7 = obj$TreeMod[[7]][[i]]
+        Lk8 = obj$TreeMod[[8]][[i]]
+        
+        res =   mybartpred(Gcomp,
+                           Lk1,
+                           Lk2,
+                           Lk3,
+                           Lk4,
+                           Lk5,
+                           Lk6,
+                           Lk7,
+                           Lk8,
+                           Xtest,
+                           as.integer(ncol(Xtest)),
+                           as.integer(testn),
+                           as.integer(ndraws),
+                           as.integer(burn),
+                           as.integer(ntrees),
+                           xi)
+        treefit = cbind(treefit, res$vec_test)
+      }
+      
+      sigmas = matrix(obj$sigmasample, nrow = (obj$ndim)^2, ncol = ndraws)
+      
+      samp_y = lapply(1:ndraws, function(j) getYhat_bart(j, obj$ndim, testn, obj$releveled, obj$maxy, treefit, sigmas, obj$working_param[j]))
+      
+      samp_y = simplify2array(samp_y)
+      
+      pclass = max.col(treefit)
+      maxw = apply(treefit,1,max)
+      pclass[which(maxw<0)] = obj$maxy
+      
+      samp_treefit =  obj$releveled[pclass] #vector of length n
+      samp_treefit = matrix(samp_treefit, nrow = testn)
     }
     
-    sigmas = matrix(obj$sigmasample, nrow = (obj$ndim)^2, ncol = ndraws)
-    
-    samp_y = lapply(1:ndraws, function(j) getYhat_bart(j, obj$ndim, testn, obj$releveled, obj$maxy, treefit, sigmas, obj$working_param[j]))
-
-    samp_y = simplify2array(samp_y)
-    
-    pclass = max.col(treefit)
-    maxw = apply(treefit,1,max)
-    pclass[which(maxw<0)] = obj$maxy
-    
-    samp_treefit =  obj$releveled[pclass] #vector of length n
-    samp_treefit = matrix(samp_treefit, nrow = testn)
-    
-    #tmp = c(t(treefit)) # z_draw_id_dim: e.g. dim = 2, (z111,z112,z121,z122,..., z nd n 1, z nd n 2)
-    
-    #res =   mympbartpred(as.integer(obj$ndim),
-    #                   as.integer(testn),
-    #                   as.integer(ndraws),
-    #                   tmp, 
-    #                   obj$sigmasample, 
-    #                   obj$working_param,
-    #                   as.integer(obj$maxy))
-    #samp_y = matrix(res$samp_y, nrow = testn)
+    if(mppred == TRUE){
+      treefit = c()
+      
+      for(i in 1:(obj$ndim)){
+        Lk1 = obj$TreeMod[[1]][[i]]
+        Lk2 = obj$TreeMod[[2]][[i]]
+        Lk3 = obj$TreeMod[[3]][[i]]
+        Lk4 = obj$TreeMod[[4]][[i]]
+        Lk5 = obj$TreeMod[[5]][[i]]
+        Lk6 = obj$TreeMod[[6]][[i]]
+        Lk7 = obj$TreeMod[[7]][[i]]
+        Lk8 = obj$TreeMod[[8]][[i]]
+        
+        res =   mybartpred(Gcomp,
+                           Lk1,
+                           Lk2,
+                           Lk3,
+                           Lk4,
+                           Lk5,
+                           Lk6,
+                           Lk7,
+                           Lk8,
+                           Xtest,
+                           as.integer(ncol(Xtest)),
+                           as.integer(testn),
+                           as.integer(ndraws),
+                           as.integer(burn),
+                           as.integer(ntrees),
+                           xi)
+        treefit = cbind(treefit, res$vec_test)
+      }
+      
+      tmp = c(t(treefit)) # z_draw_id_dim: e.g. dim = 2, (z111,z112,z121,z122,..., z nd n 1, z nd n 2)
+      
+      res =   mympbartpred(as.integer(obj$ndim),
+                         as.integer(testn),
+                         as.integer(ndraws),
+                         tmp, 
+                         obj$sigmasample, 
+                         obj$working_param,
+                         as.integer(obj$maxy))
+      samp_y = matrix(obj$releveled[res$samp_y], nrow = testn)
+      
+      pclass = max.col(treefit)
+      maxw = apply(treefit,1,max)
+      pclass[which(maxw<0)] = obj$maxy
+      
+      samp_treefit =  obj$releveled[pclass] #vector of length n
+      samp_treefit = matrix(samp_treefit, nrow = testn)
+    }
     
   }
     

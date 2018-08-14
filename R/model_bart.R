@@ -339,6 +339,45 @@ model_bart  <- function(formula, data, type, base = NULL,
                            "type" = "multinomial"), length(res))
     
     
+  } else if(type == "multinomial1"){
+    res =   mympbartmod1(Data$X,
+                        sigmai,
+                        V,
+                        as.integer(nu),
+                        as.integer(n),
+                        as.integer(pm1),
+                        Data$y,
+                        as.integer(ncol(Data$X)),
+                        as.integer(ndraws),
+                        as.integer(burn),
+                        as.integer(ntrees),
+                        as.integer(nSigDr),
+                        as.double(kfac),
+                        as.double(pswap),
+                        as.double(pbd),
+                        as.double(pb),
+                        as.double(alpha),
+                        as.double(beta),
+                        as.integer(nc),
+                        as.integer(minobsnode),
+                        binaryX,
+                        as.integer(diagnostics),
+                        as.integer(correction))
+    
+    colnames(res$Inclusion_Proportions) = xcolnames
+    
+    relvelved = as.numeric(relvelved)
+    res$samp_y <- matrix(relvelved[res$samp_y], nrow = n)
+    
+    res = append(res, list("ndim" = pm1,
+                           "xcolnames"=xcolnames,
+                           "ntrees" = ntrees,
+                           "burn" = burn,
+                           "ndraws" = ndraws,
+                           "releveled" = relvelved,
+                           "type" = "multinomial"), length(res))
+    
+    
   }
   
   

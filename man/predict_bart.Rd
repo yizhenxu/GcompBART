@@ -4,7 +4,7 @@
 \alias{predict_bart}
 \title{Predict Method for BART Fits}
 \usage{
-predict_bart(obj, newdata = NULL, Gcomp = FALSE)
+predict_bart(obj, newdata = NULL, Gcomp = FALSE, mppred = TRUE)
 }
 \arguments{
 \item{obj}{Fitted model object from BART_mod,}
@@ -12,6 +12,8 @@ predict_bart(obj, newdata = NULL, Gcomp = FALSE)
 \item{newdata}{The data matrix to look for variables with which to predict, typically without the response; if Gcomp equals TRUE, number of rows should equal n x ndraws, where n is the number of subject. For the ith subject, (i, i+n, ..., i+(ndraws-1)n) rows are its simulated posterior outcomes from the previous simulation,}
 
 \item{Gcomp}{Make predictions in the format of dynamic G-computation if TRUE; the default is FALSE,}
+
+\item{mppred}{Use mympbartpred.cpp instead of the original version,}
 }
 \value{
 treefit ndraws x n posterior matrix of the sum of trees fit,
