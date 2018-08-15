@@ -159,7 +159,7 @@ model_bart  <- function(formula, data, type, base = NULL,
   } else if(type == "binary"){
     Data = list(y = Y,X = X)
    
-  } else if(type == "multinomial"){
+  } else if(type %in% c("multinomial", "multinomial1")){
     ### processing Y
     Y <- as.factor(Y)
     lev <- levels(Y)
