@@ -43,17 +43,17 @@ List mympbartmod(NumericMatrix XMat,
   dinfo di;
   di.n_samp = (size_t)nn; di.n_cov = (size_t)n_cov; di.n_dim = (size_t)nndim;
   
-  std::vector<double> V, sigmai, sigmaiTilde;
+  std::vector<double> V, sigmai;
   
   V.resize(nndim*nndim);
   sigmai.resize(nndim*nndim);
-  sigmaiTilde.resize(nndim*nndim);
+  
   int itemp = 0;
   for(int i = 0; i < nndim; i++){
     for(int j = 0; j < nndim; j++){
       V[itemp] = V1(i,j);
       sigmai[itemp] = sigmai1(i,j);
-      sigmaiTilde[itemp] = sigmai1(i,j);
+      
       itemp++;
     }
   }
@@ -339,13 +339,6 @@ List mympbartmod(NumericMatrix XMat,
     }
   }
   
-  /* Step 1 (d) */
-  for(size_t j=0;j<di.n_dim;j++){
-    for(size_t k=0;k<di.n_dim;k++){
-      sigmaiTilde[j*di.n_dim + k] = sigmai[j*di.n_dim + k]/alpha2;
-    }
-  }
-  
   //done sampling alpha2, w
   
   /* Step 2 */
@@ -361,14 +354,14 @@ List mympbartmod(NumericMatrix XMat,
     
     
     //get pseudo response
-    getpseudoresponse(di, ftemp[ntree], rtemp, &sigmaiTilde[0], r,condsig);
+    getpseudoresponse(di, ftemp[ntree], rtemp, &sigmai[0], r,condsig);
     //condsig[k] is sqrt psi_k
     
     
     
     for(size_t k=0; k<di.n_dim; k++){
       di.y = &r[k][0];
-      pi.sigma = condsig[k]; //sqrt psi_k tilde
+      pi.sigma = sqrt(alpha)*condsig[k]; //sqrt psi_k tilde
       
       if(dgn){
         bd1(XMat, t[ntree][k], xi, di, pi, minobsnode, binaryX, &nLtDtmp[k][ntree], &percAtmp[k][ntree], &numNodestmp[k][ntree], &numLeavestmp[k][ntree], &treeDepthtmp[k][ntree], incProptmp[k], L1[k], L2[k], L3[k], L4[k], L5[k], L6[k], L7[k], L8[k]);
@@ -490,7 +483,7 @@ List mympbartmod(NumericMatrix XMat,
     
     for(size_t i=0; i<di.n_samp; i++){
       for(size_t k=0; k < di.n_dim; k++){
-        mu[i*di.n_dim + k] = allfit[k][i]/sqrt(alpha2old); //divide allfit this to transform
+        mu[i*di.n_dim + k] = allfit[k][i]/sqrt(alpha2); //divide allfit this to transform
         w[i*di.n_dim +k] = allfit[k][i]/sqrt(alpha2old) + (wtilde[k][i]-allfit[k][i]) /sqrt(alpha2) ;
       }
     }
@@ -500,7 +493,7 @@ List mympbartmod(NumericMatrix XMat,
     for(size_t i=0; i<di.n_samp; i++){
       for(size_t k=0; k < di.n_dim; k++){
         mu[i*di.n_dim + k] = allfit[k][i]/sqrt(alpha2); //divide allfit to transform
-        w[i*di.n_dim +k] = wtilde[k][i]/sqrt(alpha2);
+        w[i*di.n_dim +k] = allfit[k][i]/sqrt(alpha2old) + (wtilde[k][i]-allfit[k][i]) /sqrt(alpha2) ;
       }
     }
     
@@ -510,23 +503,15 @@ List mympbartmod(NumericMatrix XMat,
   for(size_t j=0;j<di.n_dim;j++){
     for(size_t k=0;k<di.n_dim;k++){
       sigmai[j*di.n_dim + k] = WishSampleTildeInv[j][k]*alpha2;
-      //SigmaTmpInv[j][k] = WishSampleTildeInv[j][k]*alpha2;
-      SigmaTmp[j][k] = WishSampleTilde[j][k]/alpha2;
-      if(loop>=burn){
-        sigmasample[sigdrawcounter++] = WishSampleTilde[j][k]/alpha2;
-      }
+      SigmaTmpInv[j][k] = WishSampleTildeInv[j][k]*alpha2;
+      //SigmaTmp[j][k] = WishSampleTilde[j][k]/alpha2;
     }
   }
   
   
   if(loop>=burn){
     
-    if(Jiao){
-      wp[loop-burn] = sqrt(alpha2old);
-    } else {
-      wp[loop-burn] = sqrt(alpha2);
-    }
-    
+    wp[loop-burn] = sqrt(alpha2);
     
     if(dgn){
       for(size_t k=0;k<di.n_dim;k++){
@@ -552,7 +537,15 @@ List mympbartmod(NumericMatrix XMat,
       }//k
     }//dgn
     
-    //dinv(SigmaTmpInv ,di.n_dim,SigmaTmp);
+    dinv(SigmaTmpInv ,di.n_dim,SigmaTmp);
+    for(size_t j=0;j<di.n_dim;j++){
+      for(size_t k=0;k<di.n_dim;k++){
+        sigmasample[sigdrawcounter] = SigmaTmp[j][k];
+        sigdrawcounter++;
+      }
+    }
+    
+    
     for(size_t k = 0; k <di.n_samp; k++){
       max_temp = R_NegInf;
       for(size_t l=0; l<di.n_dim; l++){
