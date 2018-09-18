@@ -255,9 +255,9 @@ List mympbartmod2(NumericMatrix XMat,
   }
   
   ////////
-  
+  int tnd = nd + fitMNP;
   NumericVector sigmasample(nndim*nndim*nd), vec_train(nn*nd), wp(nd);
-  NumericMatrix percA(nndim, nd), numNodes(nndim, nd), numLeaves(nndim, nd), treeDepth(nndim, nd), incProp(nndim, n_cov);
+  NumericMatrix percA(nndim, tnd), numNodes(nndim, tnd), numLeaves(nndim, tnd), treeDepth(nndim, tnd), incProp(nndim, n_cov);
   
   //TreeMod
   std::vector<std::vector<double> > L1; //action type
@@ -277,7 +277,6 @@ List mympbartmod2(NumericMatrix XMat,
   std::vector<std::vector<double> > L8; //CHANGE nx bottom nodes when action type == 4
   L8.resize(nndim);
   
-  int tnd = nd + fitMNP;
   for(int i = 0; i<nndim; i++){
     L1[i].reserve(m*tnd);
     L2[i].reserve(floor(0.5*m*tnd));
@@ -346,6 +345,12 @@ List mympbartmod2(NumericMatrix XMat,
     /* Step 2 */
     for(int ploop=0;ploop<fitMNP;ploop++){
       
+      for(size_t k=0; k<di.n_dim; k++){
+        for(size_t i=0;i<m;i++) {
+          percAtmp[k][i] = 0.0;
+        }
+      }
+      
       for(size_t ntree = 0 ; ntree <m; ntree++){
         for(size_t k=0; k<di.n_dim; k++){
           //fit(t[ntree][k], XMat, di, xi, ftemp[ntree][k]);
@@ -376,6 +381,21 @@ List mympbartmod2(NumericMatrix XMat,
         }
         
       }//ntree
+      
+      if(dgn){
+        for(size_t k=0;k<di.n_dim;k++){
+          for(size_t i=0;i<m;i++) {
+            percA(k, ploop) += percAtmp[k][i];
+            numNodes(k, ploop) += numNodestmp[k][i];
+            numLeaves(k, ploop) += numLeavestmp[k][i];
+            treeDepth(k, ploop) += treeDepthtmp[k][i];
+          }
+          percA(k, ploop) /= m;
+          numNodes(k, ploop) /= m;
+          numLeaves(k, ploop) /= m;
+          treeDepth(k, ploop) /= m;
+        }
+      }
     }//finish fitMNP rounds of tree fittings
     
     /* Step 3 */
@@ -497,6 +517,12 @@ List mympbartmod2(NumericMatrix XMat,
   ////////////////
   
   for(int loop=0;loop<(nd+burn);loop++) { /* Start posterior draws */
+  
+  for(size_t k=0; k<di.n_dim; k++){
+    for(size_t i=0;i<m;i++) {
+      percAtmp[k][i] = 0.0;
+    }
+  }
   
   if(loop%100==0) Rprintf("\n iteration: %d of %d \n",loop, nd+burn);
   
@@ -688,6 +714,20 @@ List mympbartmod2(NumericMatrix XMat,
     }
   }
   
+  if(dgn){
+    for(size_t k=0;k<di.n_dim;k++){
+      for(size_t i=0;i<m;i++) {
+        percA(k, fitMNP+loop) += percAtmp[k][i];
+        numNodes(k, fitMNP+loop) += numNodestmp[k][i];
+        numLeaves(k, fitMNP+loop) += numLeavestmp[k][i];
+        treeDepth(k, fitMNP+loop) += treeDepthtmp[k][i];
+      }
+      percA(k, fitMNP+loop) /= m;
+      numNodes(k, fitMNP+loop) /= m;
+      numLeaves(k, fitMNP+loop) /= m;
+      treeDepth(k, fitMNP+loop) /= m;
+    }
+  }
   
   if(loop>=burn){
     
@@ -695,16 +735,6 @@ List mympbartmod2(NumericMatrix XMat,
     
     if(dgn){
       for(size_t k=0;k<di.n_dim;k++){
-        for(size_t i=0;i<m;i++) {
-          percA(k, loop-burn) += percAtmp[k][i];
-          numNodes(k, loop-burn) += numNodestmp[k][i];
-          numLeaves(k, loop-burn) += numLeavestmp[k][i];
-          treeDepth(k, loop-burn) += treeDepthtmp[k][i];
-        }
-        percA(k, loop-burn) /= m;
-        numNodes(k, loop-burn) /= m;
-        numLeaves(k, loop-burn) /= m;
-        treeDepth(k, loop-burn) /= m;
         
         double numsplits = 0;
         for(size_t i=0; i<di.n_cov; i++){
