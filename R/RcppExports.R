@@ -17,6 +17,10 @@ mympbartmod1 <- function(XMat, sigmai1, V1, nu, nn, nndim, y1, n_cov, nd, burn, 
     .Call('_GcompBART_mympbartmod1', PACKAGE = 'GcompBART', XMat, sigmai1, V1, nu, nn, nndim, y1, n_cov, nd, burn, numtrees, nSigDr, kfac, pswap, pbd, pb, alpha, beta, nc, minobs, binaryX, dgn, Jiao)
 }
 
+mympbartmod2 <- function(XMat, sigmai1, V1, nu, nn, nndim, y1, n_cov, nd, burn, numtrees, nSigDr, kfac, pswap, pbd, pb, alpha, beta, nc, minobs, binaryX, dgn, Jiao, w1, fitMNP) {
+    .Call('_GcompBART_mympbartmod2', PACKAGE = 'GcompBART', XMat, sigmai1, V1, nu, nn, nndim, y1, n_cov, nd, burn, numtrees, nSigDr, kfac, pswap, pbd, pb, alpha, beta, nc, minobs, binaryX, dgn, Jiao, w1, fitMNP)
+}
+
 mympbartpred <- function(ndim, testn, nd, means, sigmasample, wp, maxy) {
     .Call('_GcompBART_mympbartpred', PACKAGE = 'GcompBART', ndim, testn, nd, means, sigmasample, wp, maxy)
 }

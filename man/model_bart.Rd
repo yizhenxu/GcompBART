@@ -5,7 +5,8 @@
 \title{Bayesian Additive Regression Trees}
 \usage{
 model_bart(formula, data, type, base = NULL, Prior = NULL, Mcmc = NULL,
-  diagnostics = TRUE, make.prediction = TRUE, correction = TRUE)
+  diagnostics = TRUE, make.prediction = TRUE, correction = TRUE,
+  w = NULL, sig = NULL, fitMNP = NULL)
 }
 \arguments{
 \item{formula}{response ~ covariates,}
@@ -45,6 +46,8 @@ The components of Prior are
 \item{make.prediction}{Returns simulated outcome samp_y if TRUE (default); FALSE is only applicable to continuous and binary outcomes,}
 
 \item{correction}{Analysis applies correction from Jiao and van Dyk (2015) if TRUE (default); framework from Burgette and Nordheim (2012) is used if FALSE,}
+
+\item{fitMNP}{If type is multinomial2, then w is the MNP training latents of n x nlatent, sig is the latent covariance matrix of nlatent x nlatent, and fitMNP is the number of rounds to pre-fit sum-of-trees on the MNP latents,}
 }
 \value{
 treefit ndraws x n posterior matrix of the training data sum of trees fit,

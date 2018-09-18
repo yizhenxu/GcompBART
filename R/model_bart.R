@@ -30,6 +30,7 @@
 #'@param diagnostics Returns convergence diagnostics and variable inclusion proportions if True (default),
 #'@param make.prediction Returns simulated outcome samp_y if TRUE (default); FALSE is only applicable to continuous and binary outcomes,
 #'@param correction Analysis applies correction from Jiao and van Dyk (2015) if TRUE (default); framework from Burgette and Nordheim (2012) is used if FALSE,
+#'@param fitMNP If type is multinomial2, then w is the MNP training latents of n x nlatent, sig is the latent covariance matrix of nlatent x nlatent, and fitMNP is the number of rounds to pre-fit sum-of-trees on the MNP latents,
 #'@return treefit ndraws x n posterior matrix of the training data sum of trees fit,
 #'@return samp_y ndraws x n posterior matrix of the simulated outcome,
 #'@return sigmasample posterior samples of the error standard deviation.
@@ -65,8 +66,9 @@
 #'@export
 #'@useDynLib GcompBART
 model_bart  <- function(formula, data, type, base = NULL,
-                      Prior = NULL, Mcmc = NULL, diagnostics = 
-                        TRUE, make.prediction = TRUE, correction = TRUE)
+                      Prior = NULL, Mcmc = NULL, diagnostics = TRUE, 
+                      make.prediction = TRUE, correction = TRUE,
+                      w = NULL, sig = NULL, fitMNP = NULL)
 {
   
   callT <- match.call(expand.dots = TRUE)
@@ -159,7 +161,7 @@ model_bart  <- function(formula, data, type, base = NULL,
   } else if(type == "binary"){
     Data = list(y = Y,X = X)
    
-  } else if(type %in% c("multinomial", "multinomial1")){
+  } else if(type %in% c("multinomial", "multinomial1", "multinomial2")){
     ### processing Y
     Y <- as.factor(Y)
     lev <- levels(Y)
@@ -215,6 +217,9 @@ model_bart  <- function(formula, data, type, base = NULL,
     if(is.null(Mcmc$nSigDr)) {nSigDr=50} else {nSigDr=Mcmc$nSigDr}
     
     sigmai = solve(sigma0)
+    
+    if(type == "multinomial2")
+      sigmai = solve(sig)
   }
 
   cat("Number of trees: ", ntrees, ".\n\n", sep="")
@@ -376,6 +381,48 @@ model_bart  <- function(formula, data, type, base = NULL,
                            "ndraws" = ndraws,
                            "releveled" = relvelved,
                            "type" = "multinomial"), length(res))
+    
+    
+  } else if(type == "multinomial2"){
+    res =   mympbartmod2(Data$X,
+                        sigmai,
+                        V,
+                        as.integer(nu),
+                        as.integer(n),
+                        as.integer(pm1),
+                        Data$y,
+                        as.integer(ncol(Data$X)),
+                        as.integer(ndraws),
+                        as.integer(burn),
+                        as.integer(ntrees),
+                        as.integer(nSigDr),
+                        as.double(kfac),
+                        as.double(pswap),
+                        as.double(pbd),
+                        as.double(pb),
+                        as.double(alpha),
+                        as.double(beta),
+                        as.integer(nc),
+                        as.integer(minobsnode),
+                        binaryX,
+                        as.integer(diagnostics),
+                        as.integer(correction),
+                        w,
+                        as.integer(fitMNP))
+    
+    colnames(res$Inclusion_Proportions) = xcolnames
+    
+    relvelved = as.numeric(relvelved)
+    res$samp_y <- matrix(relvelved[res$samp_y], nrow = n)
+    
+    res = append(res, list("ndim" = pm1,
+                           "xcolnames"=xcolnames,
+                           "ntrees" = ntrees,
+                           "burn" = burn,
+                           "ndraws" = ndraws,
+                           "releveled" = relvelved,
+                           "type" = "multinomial",
+                           "fitMNP" = fitMNP), length(res))
     
     
   }

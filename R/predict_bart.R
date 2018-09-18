@@ -137,6 +137,10 @@ predict_bart  <- function(obj, newdata = NULL, Gcomp = FALSE, mppred = TRUE)
     
   } else {
     
+    if(obj$type == "multinomial2"){
+      burn = obj$fitMNP + burn
+    }
+    
     if(mppred == FALSE){
       treefit = c()
       
