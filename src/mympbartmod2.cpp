@@ -255,7 +255,7 @@ List mympbartmod2(NumericMatrix XMat,
   }
   
   ////////
-  int tnd = nd + fitMNP;
+  int tnd = nd + fitMNP + burn;
   NumericVector sigmasample(nndim*nndim*nd), vec_train(nn*nd), wp(nd);
   NumericMatrix percA(nndim, tnd), numNodes(nndim, tnd), numLeaves(nndim, tnd), treeDepth(nndim, tnd), incProp(nndim, n_cov);
   
@@ -344,6 +344,8 @@ List mympbartmod2(NumericMatrix XMat,
     
     /* Step 2 */
     for(int ploop=0;ploop<fitMNP;ploop++){
+      
+      if(ploop%100==0) Rprintf("\n MNP tree fit iteration: %d of %d \n",ploop, fitMNP);
       
       for(size_t k=0; k<di.n_dim; k++){
         for(size_t i=0;i<m;i++) {
