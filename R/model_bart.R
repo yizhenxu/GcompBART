@@ -421,7 +421,7 @@ model_bart  <- function(formula, data, type, base = NULL,
                            "burn" = burn,
                            "ndraws" = ndraws,
                            "releveled" = relvelved,
-                           "type" = "multinomial",
+                           "type" = "multinomial2",
                            "fitMNP" = fitMNP), length(res))
     
     

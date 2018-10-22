@@ -361,7 +361,7 @@ List mympbartmod(NumericMatrix XMat,
     
     for(size_t k=0; k<di.n_dim; k++){
       di.y = &r[k][0];
-      pi.sigma = sqrt(alpha)*condsig[k]; //sqrt psi_k tilde
+      pi.sigma = sqrt(alpha2)*condsig[k]; //sqrt psi_k tilde
       
       if(dgn){
         bd1(XMat, t[ntree][k], xi, di, pi, minobsnode, binaryX, &nLtDtmp[k][ntree], &percAtmp[k][ntree], &numNodestmp[k][ntree], &numLeavestmp[k][ntree], &treeDepthtmp[k][ntree], incProptmp[k], L1[k], L2[k], L3[k], L4[k], L5[k], L6[k], L7[k], L8[k]);

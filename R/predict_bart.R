@@ -139,6 +139,8 @@ predict_bart  <- function(obj, newdata = NULL, Gcomp = FALSE, mppred = TRUE)
     
     if(obj$type == "multinomial2"){
       burn = obj$fitMNP + burn
+      lwp = length(obj$working_param)        
+      obj$working_param = rep(1,lwp)
     }
     
     if(mppred == FALSE){
@@ -240,7 +242,7 @@ predict_bart  <- function(obj, newdata = NULL, Gcomp = FALSE, mppred = TRUE)
     
   }
     
-  if(obj$type == "multinomial"){
+  if(obj$type %in% c("multinomial","multinomial2")){
     ret = list(treefit = treefit,
                samp_y = samp_y,
                samp_treefit = samp_treefit);
