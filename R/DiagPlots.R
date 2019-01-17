@@ -33,10 +33,16 @@
 #'@import bayesm mlbench mlogit cvTools stats
 #'@export
 DiagPlot <- function(bfit, plot_type, byrow = TRUE){
-  nd = bfit$ndraws
+
   response_type = bfit$type
+  if(response_type %in% c("continuous","binary","multinomial")){
+    nd = bfit$ndraws + bfit$burn  
+  } else {
+    nd = bfit$ndraws + bfit$burn + bfit$fitMNP
+  }
+  
   if(plot_type){ #diagnostic plots
-    if(response_type=="multinomial"){
+    if(response_type %in% c("multinomial","multinomial2","multinomial3")){
       pm1 = bfit$ndim
       par(mfrow=c(pm1,4))
       if(byrow == FALSE){
@@ -76,7 +82,7 @@ DiagPlot <- function(bfit, plot_type, byrow = TRUE){
     }
     
   } else { #inclusion proportions
-    if(response_type=="multinomial"){
+    if(response_type %in% c("multinomial","multinomial2","multinomial3")){
       pm1 = bfit$ndim
       par(mfrow=c(1,pm1))
       

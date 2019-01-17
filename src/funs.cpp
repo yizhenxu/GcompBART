@@ -11,6 +11,58 @@
 #include "bd.h"
 #include "funs.h"
 
+/*function to compute the inverse of permuted Sigma */
+void dinvperm(double *sigi,
+          int	p, int j,
+          std::vector<std::vector<double> >& PerSigInv){
+  int k, l;
+  std::vector<std::vector<double> > SigmaInv, Sigma, PerSig;
+  SigmaInv.resize(p);
+  Sigma.resize(p);
+  PerSig.resize(p);
+  
+  for(k=0;k<p;k++){
+    SigmaInv[k].resize(p);
+    Sigma[k].resize(p);
+    PerSig[k].resize(p);
+  }
+  
+  int itemp = 0;
+  for (k = 0; k < p; k++){
+    for (l = 0; l < p; l++){
+      SigmaInv[l][k] = sigi[itemp++];
+    }
+  }
+  dinv(SigmaInv, p, Sigma);
+  
+  /** permutation of Sigma **/
+  int kindx, lindx;          /* Indexes for the permutation of Sigma */
+  kindx = 0;
+  for(k=0;k<p;k++){
+    lindx=0;
+    for(l=0;l<p;l++){
+      if(j!=k)
+        if(j!=l)
+          PerSig[k+kindx][l+lindx]=Sigma[k][l];
+        else{
+          lindx=-1;
+          PerSig[k+kindx][p-1]=Sigma[k][l];
+        }
+        else{
+          kindx=-1;
+          if(j==l){
+            lindx=-1;
+            PerSig[p-1][p-1]=Sigma[j][j];
+          }
+          else
+            PerSig[p-1][l+lindx]=Sigma[k][l];
+        }
+    }
+  }
+  dinv(PerSig, p, PerSigInv);
+  
+}
+  
 /* function to compute moments of x[j] | x[-j], j starts from 0, adapted from MNP */
 void condmom_mnp(double *x, double *mu, double *sigi, int p, int j, double *m, double *csig)
 {
@@ -67,7 +119,7 @@ void condmom_mnp(double *x, double *mu, double *sigi, int p, int j, double *m, d
   *csig=sqrt(cvar);
 
   *m  = mu[j];
-  double* vtemp = new double[p];
+  double* vtemp = new double[p-1];
   itemp = 0;
   for(k=0;k<p;k++){
     if(k != j)
@@ -140,6 +192,36 @@ void draww(double *w, double *mu, double *sigmai, int *n, int *p, int *y)
 //---------------------------------------------------------------
 // get cut-points
 void getcutpoints(int nc, int n_cov, int n_samp,
+                  std::vector<std::vector<double> >& X, xinfo& xi){
+  double xinc; //increments
+  double xx;
+  
+  
+  std::vector<double> minx(n_cov,R_PosInf); // to store the minimum of each of the individual specific pred
+  std::vector<double> maxx(n_cov,R_NegInf);// to store the max of each of the individual specific pred
+  
+  for(int j=0;j<n_cov;j++) {
+    for(int i=0;i<n_samp;i++) {
+      xx = X[i][j];
+      if(xx < minx[j]) minx[j]=xx;
+      if(xx > maxx[j]) maxx[j]=xx;
+    }
+  }
+  
+  
+  
+  //make grid of nc cutpoints between min and max for each x.
+  xi.resize(n_cov);
+  for(int i=0;i<n_cov;i++) {
+    xinc = (maxx[i]-minx[i])/(nc+1.0);
+    xi[i].resize(nc);
+    for(int j=0;j<nc;j++) xi[i][j] = minx[i] + (j+1)*xinc;
+  }
+  
+  
+}
+
+void getcutpoints(int nc, int n_cov, int n_samp,
                   Rcpp::NumericMatrix& X, xinfo& xi){
   double xinc; //increments
   double xx;
@@ -184,7 +266,24 @@ bool cansplit(tree::tree_p n, xinfo& xi)
   }
   return v_found;
 }
-//
+//std X, n_samp, n_cov
+void fit(tree& t, std::vector<std::vector<double> >& X, int n_samp, int n_cov, xinfo& xi, std::vector<double>& fv)
+{
+  double* xx = new double[n_cov];
+  tree::tree_cp bn;
+  
+  for(int i=0;i < n_samp;i++) {
+    for(int j=0;j < n_cov; j++){
+      xx[j] = X[i][j];
+    }
+    
+    bn = t.bn(xx,xi);
+    fv[i] = bn->getm();
+  }
+  delete[] xx;
+  xx = 0;
+}
+//Numeric X, di
 void fit(tree& t, Rcpp::NumericMatrix& X, dinfo di, xinfo& xi, std::vector<double>& fv)
 {
   double* xx = new double[di.n_cov];
@@ -201,6 +300,8 @@ void fit(tree& t, Rcpp::NumericMatrix& X, dinfo di, xinfo& xi, std::vector<doubl
   delete[] xx;
   xx = 0;
 }
+
+
 // get pseudo response
 
 
@@ -318,6 +419,40 @@ void allsuff(std::vector<std::vector<double> >& X,
 }
 //--------------------------------------------------
 //get sufficient stats for children (v,c) of node nx in tree x
+//std X, di, ncov
+void getsuff(std::vector<std::vector<double> >& X, size_t ncov,
+             tree& x, tree::tree_cp nx, size_t v, size_t c,
+             xinfo& xi, dinfo& di, sinfo& sl, sinfo& sr)
+{
+  double* xx = new double[ncov];
+  double y;  //current y
+  sl.n=0;sl.sy=0.0;sl.sy2=0.0;
+  sr.n=0;sr.sy=0.0;sr.sy2=0.0;
+  
+  for(size_t i=0;i<di.n_samp;i++) {
+    for(size_t j=0;j<ncov; j++){
+      xx[j] = X[i][j];
+    }
+    
+    if(nx==x.bn(xx,xi)) { //does the bottom node = xx's bottom node
+      y = di.y[i];
+      if(xx[v] < xi[v][c]) {
+        sl.n++;
+        sl.sy += y;
+        sl.sy2 += y*y;
+      } else {
+        sr.n++;
+        sr.sy += y;
+        sr.sy2 += y*y;
+      }
+    }
+  }
+  // free memory
+  delete []xx;
+  xx = 0;
+  
+}
+//Numeric X, di
 void getsuff(Rcpp::NumericMatrix& X,
              tree& x, tree::tree_cp nx, size_t v, size_t c,
              xinfo& xi, dinfo& di, sinfo& sl, sinfo& sr)
@@ -352,6 +487,43 @@ void getsuff(Rcpp::NumericMatrix& X,
 }
 //--------------------------------------------------
 //get sufficient stats for pair of bottom children nl(left) and nr(right) in tree x
+//std X, di, ncov
+void getsuff(std::vector<std::vector<double> >& X, size_t ncov,
+             tree& x, tree::tree_cp nl, tree::tree_cp nr,
+             xinfo& xi, dinfo& di, sinfo& sl, sinfo& sr)
+{
+  
+  
+  double* xx = new double[ncov];
+  double y;  //current y
+  sl.n=0;sl.sy=0.0;sl.sy2=0.0;
+  sr.n=0;sr.sy=0.0;sr.sy2=0.0;
+  
+  for(size_t i=0;i<di.n_samp;i++) {
+    for(size_t j=0;j<ncov; j++){
+      xx[j] = X[i][j];
+    }
+    tree::tree_cp bn = x.bn(xx,xi);
+    if(bn==nl) {
+      y = di.y[i];
+      sl.n++;
+      sl.sy += y;
+      sl.sy2 += y*y;
+    }
+    if(bn==nr) {
+      y = di.y[i];
+      sr.n++;
+      sr.sy += y;
+      sr.sy2 += y*y;
+    }
+  }
+  // free memory
+  delete []xx;
+  xx = 0;
+  
+}
+
+//Numeric X, di
 void getsuff(Rcpp::NumericMatrix& X,
              tree& x, tree::tree_cp nl, tree::tree_cp nr,
              xinfo& xi, dinfo& di, sinfo& sl, sinfo& sr)
@@ -909,6 +1081,93 @@ void swapkidInd(tree::tree_cp n1, tree::tree_cp n2, int* lind, int* rind){
   /*If upd == 1, update mu in bottom nodes of subtree rooted at n*/
   /*x is the whole tree, n is an internal node of x*/
   /*this is only different from lilT in finding y in bn using map as in allsuff, might be faster */
+  double lilT1(std::vector<std::vector<double> >& X, size_t ncov, tree& x,
+               tree::tree_p n, xinfo& xi, pinfo& pi, dinfo& di, tree::npv& nbnv, int upd){
+    
+    tree::tree_cp tbn; //the pointer to the bottom node for the current observations
+    size_t ni;         //the  index into vector of the current bottom node
+    
+    tree::npv bnv; //all the bottom nodes of x
+    x.getbots(bnv);
+    
+    typedef tree::npv::size_type bvsz;
+    bvsz nb = bnv.size();
+    
+    std::map<tree::tree_cp,size_t> bnmap;
+    for(size_t i=0;i!=(size_t) nb;i++) bnmap[bnv[i]]= i;
+    
+    
+    double* xx = new double[ncov];
+    double y;  //current y
+    double yb, yb2, S, d, sig2, tau2, sum;
+    double LT = 0;
+    double a, b;
+    
+    double* bnn = new double[(int) nb]();
+    double* bnsy = new double[(int) nb]();
+    double* bnsy2 = new double[(int) nb]();
+    
+    for(size_t i=0;i<di.n_samp;i++) {
+      
+      for(size_t j=0;j<ncov; j++){
+        xx[j] = X[i][j];
+      }//j
+      
+      y=di.y[i];
+      
+      tbn = x.bn(xx,xi);
+      ni = bnmap[tbn];
+      
+      ++(bnn[ni]);
+      bnsy[ni] += y;
+      bnsy2[ni] +=  y*y;
+      
+    }//i
+    
+    for(size_t k = 0; k != (size_t) nb; k++){
+      if(bnn[k] == 0.0) return(10086.0);
+    }//empty bottom node after action, invalid
+    
+    
+    //update bn of the subtree rooted at n
+    
+    nbnv.clear();//all the bottom nodes of subtree n
+    n->getbots(nbnv);
+    
+    sig2 = pi.sigma * pi.sigma; // sigma^2
+    tau2 = pi.tau * pi.tau;
+    a= 1.0/tau2; //a = 1/tau^2
+    
+    
+    for(bvsz k = 0; k != nbnv.size(); k++){//loop over all bottom nodes of x
+      tbn = nbnv[k];// pointer to the kth subtree bn
+      ni = bnmap[tbn];//corresponding index in bnv, bnn, bnsy, bnsy2
+      
+      yb = bnsy[ni]/ bnn[ni];
+      yb2 = yb*yb;
+      S = bnsy2[ni] - (bnn[ni]*yb2);
+      d = bnn[ni]*tau2 + sig2;
+      sum = S/sig2 + (bnn[ni]*yb2)/d;
+      
+      LT += -(bnn[ni]*LTPI/2.0) - (bnn[ni]-1)*log(pi.sigma) - log(d)/2.0 - sum/2.0;
+      
+      //update the mu’s if upd==1
+      if(upd == 1){
+        b = bnn[ni]/sig2; // b=n/sigma^2
+        bnv[ni]->mu = b*yb/(a+b) + norm_rand()/sqrt(a+b);
+      }//upd
+      
+    }//k
+    
+    
+    delete[] xx; xx = 0;
+    delete[] bnn; bnn = 0;
+    delete[] bnsy; bnsy = 0;
+    delete[] bnsy2; bnsy2 = 0;
+    return(LT);
+  }
+
+  
   double lilT1(Rcpp::NumericMatrix& X, tree& x,
               tree::tree_p n, xinfo& xi, pinfo& pi, dinfo& di, tree::npv& nbnv, int upd){
 

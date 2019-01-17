@@ -253,9 +253,9 @@ List mympbartmod(NumericMatrix XMat,
   }
   
   ////////
-  
+  int tnd = burn + nd;
   NumericVector sigmasample(nndim*nndim*nd), vec_train(nn*nd), wp(nd);
-  NumericMatrix percA(nndim, nd), numNodes(nndim, nd), numLeaves(nndim, nd), treeDepth(nndim, nd), incProp(nndim, n_cov);
+  NumericMatrix percA(nndim, tnd), numNodes(nndim, tnd), numLeaves(nndim, tnd), treeDepth(nndim, tnd), incProp(nndim, n_cov);
   
   //TreeMod
   std::vector<std::vector<double> > L1; //action type
@@ -276,14 +276,14 @@ List mympbartmod(NumericMatrix XMat,
   L8.resize(nndim);
   
   for(int i = 0; i<nndim; i++){
-    L1[i].reserve(m*nd);
-    L2[i].reserve(floor(0.5*m*nd));
-    L3[i].reserve(floor(4*0.5*pb*m*nd));
-    L4[i].reserve(floor(0.5*(pbd - pb)*m*nd));
-    L5[i].reserve(floor(7*0.5*pswap*m*nd));
-    L6[i].reserve(floor(5*0.5*pswap*m*nd));
-    L7[i].reserve(floor(3*0.5*(1 - pbd - pswap)*m*nd));
-    L8[i].reserve(floor(5*0.5*(1 - pbd - pswap)*m*nd));
+    L1[i].reserve(m*tnd);
+    L2[i].reserve(floor(0.5*m*tnd));
+    L3[i].reserve(floor(4*0.5*pb*m*tnd));
+    L4[i].reserve(floor(0.5*(pbd - pb)*m*tnd));
+    L5[i].reserve(floor(7*0.5*pswap*m*tnd));
+    L6[i].reserve(floor(5*0.5*pswap*m*tnd));
+    L7[i].reserve(floor(3*0.5*(1 - pbd - pswap)*m*tnd));
+    L8[i].reserve(floor(5*0.5*(1 - pbd - pswap)*m*tnd));
   }
   
   std::vector<double> w, mu;
@@ -303,7 +303,13 @@ List mympbartmod(NumericMatrix XMat,
   int countvectrain = 0;
   
   
-  for(int loop=0;loop<(nd+burn);loop++) { /* Start posterior draws */
+  for(int loop=0;loop < tnd;loop++) { /* Start posterior draws */
+  
+  for(size_t k=0; k<di.n_dim; k++){
+    for(size_t i=0;i<m;i++) {
+      percAtmp[k][i] = 0.0;
+    }
+  }
   
   if(loop%100==0) Rprintf("\n iteration: %d of %d \n",loop, nd+burn);
   
@@ -479,24 +485,11 @@ List mympbartmod(NumericMatrix XMat,
   
   
   /* Step 3 (e) and (f) */
-  if(Jiao){
-    
-    for(size_t i=0; i<di.n_samp; i++){
-      for(size_t k=0; k < di.n_dim; k++){
-        mu[i*di.n_dim + k] = allfit[k][i]/sqrt(alpha2); //divide allfit this to transform
-        w[i*di.n_dim +k] = allfit[k][i]/sqrt(alpha2old) + (wtilde[k][i]-allfit[k][i]) /sqrt(alpha2) ;
-      }
+  for(size_t i=0; i<di.n_samp; i++){
+    for(size_t k=0; k < di.n_dim; k++){
+      mu[i*di.n_dim + k] = allfit[k][i]/sqrt(alpha2); //divide allfit to transform
+      w[i*di.n_dim +k] = allfit[k][i]/sqrt(alpha2old) + (wtilde[k][i]-allfit[k][i]) /sqrt(alpha2) ;
     }
-    
-  } else {
-    
-    for(size_t i=0; i<di.n_samp; i++){
-      for(size_t k=0; k < di.n_dim; k++){
-        mu[i*di.n_dim + k] = allfit[k][i]/sqrt(alpha2); //divide allfit to transform
-        w[i*di.n_dim +k] = allfit[k][i]/sqrt(alpha2old) + (wtilde[k][i]-allfit[k][i]) /sqrt(alpha2) ;
-      }
-    }
-    
   }
   
   /* Step 3 (d) */
@@ -508,6 +501,20 @@ List mympbartmod(NumericMatrix XMat,
     }
   }
   
+  if(dgn){
+    for(size_t k=0;k<di.n_dim;k++){
+      for(size_t i=0;i<m;i++) {
+        percA(k, loop) += percAtmp[k][i];
+        numNodes(k, loop) += numNodestmp[k][i];
+        numLeaves(k, loop) += numLeavestmp[k][i];
+        treeDepth(k, loop) += treeDepthtmp[k][i];
+      }
+      percA(k, loop) /= m;
+      numNodes(k, loop) /= m;
+      numLeaves(k, loop) /= m;
+      treeDepth(k, loop) /= m;
+    }
+  }
   
   if(loop>=burn){
     
@@ -515,16 +522,6 @@ List mympbartmod(NumericMatrix XMat,
     
     if(dgn){
       for(size_t k=0;k<di.n_dim;k++){
-        for(size_t i=0;i<m;i++) {
-          percA(k, loop-burn) += percAtmp[k][i];
-          numNodes(k, loop-burn) += numNodestmp[k][i];
-          numLeaves(k, loop-burn) += numLeavestmp[k][i];
-          treeDepth(k, loop-burn) += treeDepthtmp[k][i];
-        }
-        percA(k, loop-burn) /= m;
-        numNodes(k, loop-burn) /= m;
-        numLeaves(k, loop-burn) /= m;
-        treeDepth(k, loop-burn) /= m;
         
         double numsplits = 0;
         for(size_t i=0; i<di.n_cov; i++){

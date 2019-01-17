@@ -120,26 +120,26 @@ List mybartmod(NumericMatrix XMat,
   for(size_t i=0; i<di.n_cov; i++){
     incProptmp[i] = 0.0;
   }
-  
-  NumericVector sigmasample(nd), vec_train(nn*nd), percA(nd), numNodes(nd), numLeaves(nd), treeDepth(nd), incProp(n_cov);
+  int tnd = burn + nd;
+  NumericVector sigmasample(nd), vec_train(nn*nd), percA(tnd), numNodes(tnd), numLeaves(tnd), treeDepth(tnd), incProp(n_cov);
   
   //TreeMod
   std::vector<double> L1; //action type
-  L1.reserve(m*nd);
+  L1.reserve(m*tnd);
   std::vector<double> L2; //node id when action type > 0
-  L2.reserve(floor(0.5*m*nd));
+  L2.reserve(floor(0.5*m*tnd));
   std::vector<double> L3; //GROW info (v, c, mul, mur) when action type == 1
-  L3.reserve(floor(4*0.5*pb*m*nd));
+  L3.reserve(floor(4*0.5*pb*m*tnd));
   std::vector<double> L4; //PRUNE info (mu) when action type = =2
-  L4.reserve(floor(0.5*(pbd - pb)*m*nd));
+  L4.reserve(floor(0.5*(pbd - pb)*m*tnd));
   std::vector<double> L5; //SWAP info (lind, rind, vd, cd, vk, ck, nbnc.size()) when action type == 3
-  L5.reserve(floor(7*0.5*pswap*m*nd));
+  L5.reserve(floor(7*0.5*pswap*m*tnd));
   std::vector<double> L6; //SWAP nx bottom nodes when action type == 3
-  L6.reserve(floor(5*0.5*pswap*m*nd));
+  L6.reserve(floor(5*0.5*pswap*m*tnd));
   std::vector<double> L7; //CHANGE info (v, c, nbnv.size()) when action type == 4
-  L7.reserve(floor(3*0.5*(1 - pbd - pswap)*m*nd));
+  L7.reserve(floor(3*0.5*(1 - pbd - pswap)*m*tnd));
   std::vector<double> L8; //CHANGE nx bottom nodes when action type == 4
-  L8.reserve(floor(5*0.5*(1 - pbd - pswap)*m*nd));
+  L8.reserve(floor(5*0.5*(1 - pbd - pswap)*m*tnd));
   
   //MCMC
   
@@ -151,7 +151,7 @@ List mybartmod(NumericMatrix XMat,
   int countvectrain = 0;
   
   
-  for(int loop=0;loop<(nd+burn);loop++) { /* Start posterior draws */
+  for(int loop=0;loop < tnd;loop++) { /* Start posterior draws */
     
     if(loop%100==0) Rprintf("\n iteration: %d of %d \n",loop, nd+burn);
     
@@ -199,20 +199,22 @@ List mybartmod(NumericMatrix XMat,
     
     //std::cout << "loop = "<<loop<<"; SSE = "<<ss<<"; sigma = " << pi.sigma<<";\n";
     
+    if(dgn){
+      for(size_t i=0;i<m;i++) {
+        percA[loop] += percAtmp[i];
+        numNodes[loop] += numNodestmp[i];
+        numLeaves[loop] += numLeavestmp[i];
+        treeDepth[loop] += treeDepthtmp[i];
+      }
+      percA[loop] /= m;
+      numNodes[loop] /= m;
+      numLeaves[loop] /= m;
+      treeDepth[loop] /= m;
+    }
+    
     if(loop>=burn){
       
       if(dgn){
-        for(size_t i=0;i<m;i++) {
-          percA[loop-burn] += percAtmp[i];
-          numNodes[loop-burn] += numNodestmp[i];
-          numLeaves[loop-burn] += numLeavestmp[i];
-          treeDepth[loop-burn] += treeDepthtmp[i];
-        }
-        percA[loop-burn] /= m;
-        numNodes[loop-burn] /= m;
-        numLeaves[loop-burn] /= m;
-        treeDepth[loop-burn] /= m;
-        
         double numsplits = 0;
         for(size_t i=0; i<di.n_cov; i++){
           //std::cout<< "loop"<<loop<<" "<<incProptmp[i] <<" \n";

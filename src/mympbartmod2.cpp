@@ -37,7 +37,7 @@ List mympbartmod2(NumericMatrix XMat,
                  NumericVector binaryX,
                  int dgn,
                  int Jiao,
-                 NumericVector w1,
+                 NumericMatrix w1,
                  int fitMNP) {
   
   size_t m = (size_t) numtrees;
@@ -304,15 +304,17 @@ List mympbartmod2(NumericMatrix XMat,
   /* Initialize counters for outputs sigmasample, vec_test and vec_train */
   int countvectrain = 0;
   
+  /* If fitMNP==0, initialize w to Mcmc$w0 (matrix of 0 if no input) */
+  /* If fitMNP > 0, Mcmc$w0 is result from MNP, fitted in preheat */
+  for(size_t k=0; k<di.n_dim; k++){
+    for(size_t i=0;i<di.n_samp;i++) {
+      w[i*di.n_dim + k] = w1(i,k);
+    }
+  }
   
   if(fitMNP > 0){
     
     //skip Step 1 (a) of sampling w, use w from MNP
-    for(size_t k=0; k<di.n_dim; k++){
-      for(size_t i=0;i<di.n_samp;i++) {
-        w[i*di.n_dim + k] = w1(i,k);
-      }
-    }
     
     /* Step 1 (b) */
     /* mtemp1 = V x inverse(Sigma) */
