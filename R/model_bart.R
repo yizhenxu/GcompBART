@@ -24,13 +24,14 @@
 #'@param Mcmc List of MCMC starting values, burn-in ... for continuous or binary response: e.g., list(burn = 100, ndraws = 1000); for multinomial response: e.g.  list(sigma0 = diag(p - 1), burn = 100, ndraws = 1000, nSigDr = 50)
 #'#'The components of Mcmc are
 #' \itemize{
-#'\item sigma0 : The starting value of the covariance matrix of latent variables.
+#'\item w0 : The n x nlatent matrix of starting values for the latent variables; this can be results from the MNP. 
+#'\item sigma0 : The nlatent x nlatent matrix of starting value for the covariance matrix of latent variables.
 #'\item nSigDr: User-specified upper limit to repeated draws of the covariance variance matrix of latent variables in each round of posterior draw when condition 10 in Jiao and van Dyk 2015 is not satisfied. Default 50. 
 #'}
 #'@param diagnostics Returns convergence diagnostics and variable inclusion proportions if True (default),
 #'@param make.prediction Returns simulated outcome samp_y if TRUE (default); FALSE is only applicable to continuous and binary outcomes,
 #'@param correction Analysis applies correction from Jiao and van Dyk (2015) if TRUE (default); framework from Burgette and Nordheim (2012) is used if FALSE,
-#'@param fitMNP If type is multinomial2, then w is the MNP training latents of n x nlatent, sig is the latent covariance matrix of nlatent x nlatent, and fitMNP is the number of rounds to pre-fit sum-of-trees on the MNP latents,
+#'@param fitMNP If type is multinomial, then fitMNP is the number of rounds to pre-fit sum-of-trees on the w0 conditional on sigma0, default is zero; if fitMNP is not zero, there must be input for Mcmc w0 and sigma0,
 #'@return treefit ndraws x n posterior matrix of the training data sum of trees fit,
 #'@return samp_y ndraws x n posterior matrix of the simulated outcome,
 #'@return sigmasample posterior samples of the error standard deviation.
@@ -52,7 +53,7 @@
 #'Ey = f(x)
 #'y=Ey+sigma*rnorm(n)
 #'dat = data.frame(x,y)
-#'fml = as.formula("y ~ X1+X2+X3+X4+X5+X6+X7+X8+X9+X10")
+#'fml = y ~ X1+X2+X3+X4+X5+X6+X7+X8+X9+X10
 #'bfit = model_bart(fml, data = dat,
 #'                 Prior = list(nu = 3, sigq = 0.9,
 #'                              ntrees = 100,
@@ -65,42 +66,96 @@
 #'@import bayesm mlbench mlogit cvTools stats
 #'@export
 #'@useDynLib GcompBART
-model_bart  <- function(formula, data, type, base = NULL,
+model_bart  <- function(formula = NULL, Yname = NULL, Xname = NULL, data, type, base = NULL,
                       Prior = NULL, Mcmc = NULL, diagnostics = TRUE, 
-                      make.prediction = TRUE, correction = TRUE,
-                      w = NULL, sig = NULL, fitMNP = NULL)
+                      make.prediction = TRUE, correction = TRUE, fitMNP = NULL)
 {
+  if(!is.null(fitMNP)){
+    if(type != "multinomial"){
+      stop("Check type input.")
+    } else {
+      type = "multinomial2"
+    }
+  }
   
-  callT <- match.call(expand.dots = TRUE)
-  
-  formula <- mFormula(formula)
-  
-  
-  response.name <- paste(deparse(attr(formula, "lhs")[[1L]]))
-  m <- match(c("formula", "data"), names(callT), 0L)
-  mf <- callT
-  mf <- mf[c(1L, m)]
-  
-  mf$formula <- formula
-  
-  
-  mf[[1L]] <- as.name("model.frame")
-  mf <- eval(mf, parent.frame())
-  Y <- model.response(mf)
-  
-  Terms <- attr(mf, "terms")
-  
-  X <- model.matrix.default(Terms, mf)
-  
-  xcolnames <- colnames(X)[-1]
-  
-  if(length(xcolnames) == 1 ){
-    X <- data.frame(X[,xcolnames])
-    names(X) <- xcolnames[1]
+  if(!is.null(formula)){
     
+    callT <- match.call(expand.dots = TRUE)
+    
+    formula <- mFormula(formula) # mFormula is from package mlogit
+    
+    response.name <- paste(deparse(attr(formula, "lhs")[[1L]]))
+    
+    # mf = list(function name, formula, data) 
+    m <- match(c("formula", "data"), names(callT), 0L)
+    mf <- callT
+    mf <- mf[c(1L, m)]
+    
+    mf$formula <- formula
+    
+    # mf = model.frame(formula, data), 
+    # returns data frame of attr(terms(mf),'variables'), which is (y, covariates)
+    mf[[1L]] <- as.name("model.frame")
+    mf <- eval(mf, parent.frame())
+    
+    # extract response from the mf data frame based on attr(terms(mf),'response'), col no. of y (1)
+    Y <- model.response(mf)
+    
+    Terms <- attr(mf, "terms") # <-> terms(mf)
+    
+    # extract design matrix from mf based on Terms, which has attr(terms(mf),'intercept') = 1
+    X <- model.matrix.default(Terms, mf) 
+    xcolnames <- colnames(X)[-1]
+    # this is equiv to doing:
+    # attr(Terms,'intercept') = 0; X = ...; xcolnames = colnames(X)
+    # X <- X[,xcolnames] would be unnecessary
+    
+    if(length(xcolnames) == 1 ){
+      X <- data.frame(X[,xcolnames])
+      names(X) <- xcolnames[1]
+    } else {
+      X <- X[,xcolnames]
+    }
   } else {
     
-    X <- X[,xcolnames]
+    xinfo = c()
+    data = as.data.frame(data)
+    
+    lXname = length(Xname)
+    fmllist = vector("list",lXname)
+    for(j in 1:lXname){
+      
+      # for each latent, generate the corresponding formula
+      Xj = Xname[[j]]
+      lX = length(Xj)
+      if(lX == 0) stop("Error: Each element of X should include at least one covariate.")
+      if(lX == 1){
+        fml = paste0(Yname,"~", Xj[lX],collapse = "")
+      } else {
+        fml = paste0(Yname,"~",paste0(Xj[-lX],"+",collapse = ""), Xj[lX],collapse = "")
+      }
+      fmllist[[j]] = as.formula(fml)
+      
+      # extract design matrix
+      mf = model.frame(fml, data)
+      Terms = attr(mf, "terms")
+      if(j==1){
+        X = model.matrix.default(Terms, mf)
+        xcolnames = colnames(X)[-1]  
+        xinfo = c(xinfo, length(xcolnames))
+      } else {
+        Xnew = model.matrix.default(Terms, mf)
+        X = cbind(X, Xnew)
+        xcolnames = c(xcolnames, colnames(Xnew)[-1])
+        xinfo = c(xinfo, length(colnames(Xnew)[-1]))
+      }
+      
+    }
+    
+    X = X[, xcolnames]
+    
+    Y <- model.response(mf)
+    
   }
   
   n = nrow(X)
@@ -203,6 +258,10 @@ model_bart  <- function(formula, data, type, base = NULL,
 
     pm1=p-1
     
+    if(is.null(formula)){
+      if(lXname != pm1) stop("Error: length of Xname should be the number of latent variables.")
+    }
+    
     if(missing(Prior))
     {
       nu=pm1+3; V=nu*diag(pm1);
@@ -213,13 +272,12 @@ model_bart  <- function(formula, data, type, base = NULL,
       if(is.null(Prior$V)) {V=nu*diag(pm1)} else {V=Prior$V}
     }
     
+    if(is.null(Mcmc$w0)) {w=matrix(0,nrow = n, ncol = pm1)} else {w=Mcmc$w0}
     if(is.null(Mcmc$sigma0)) {sigma0=diag(pm1)} else {sigma0=Mcmc$sigma0}
     if(is.null(Mcmc$nSigDr)) {nSigDr=50} else {nSigDr=Mcmc$nSigDr}
     
     sigmai = solve(sigma0)
     
-    if(type == "multinomial2")
-      sigmai = solve(sig)
   }
 
   cat("Number of trees: ", ntrees, ".\n\n", sep="")

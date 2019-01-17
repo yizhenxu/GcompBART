@@ -305,6 +305,12 @@ List mympbartmod(NumericMatrix XMat,
   
   for(int loop=0;loop<(nd+burn);loop++) { /* Start posterior draws */
   
+  for(size_t k=0; k<di.n_dim; k++){
+    for(size_t i=0;i<m;i++) {
+      percAtmp[k][i] = 0.0;
+    }
+  }
+  
   if(loop%100==0) Rprintf("\n iteration: %d of %d \n",loop, nd+burn);
   
   /* Step 1 (a) */
@@ -479,24 +485,11 @@ List mympbartmod(NumericMatrix XMat,
   
   
   /* Step 3 (e) and (f) */
-  if(Jiao){
-    
-    for(size_t i=0; i<di.n_samp; i++){
-      for(size_t k=0; k < di.n_dim; k++){
-        mu[i*di.n_dim + k] = allfit[k][i]/sqrt(alpha2); //divide allfit this to transform
-        w[i*di.n_dim +k] = allfit[k][i]/sqrt(alpha2old) + (wtilde[k][i]-allfit[k][i]) /sqrt(alpha2) ;
-      }
+  for(size_t i=0; i<di.n_samp; i++){
+    for(size_t k=0; k < di.n_dim; k++){
+      mu[i*di.n_dim + k] = allfit[k][i]/sqrt(alpha2); //divide allfit to transform
+      w[i*di.n_dim +k] = allfit[k][i]/sqrt(alpha2old) + (wtilde[k][i]-allfit[k][i]) /sqrt(alpha2) ;
     }
-    
-  } else {
-    
-    for(size_t i=0; i<di.n_samp; i++){
-      for(size_t k=0; k < di.n_dim; k++){
-        mu[i*di.n_dim + k] = allfit[k][i]/sqrt(alpha2); //divide allfit to transform
-        w[i*di.n_dim +k] = allfit[k][i]/sqrt(alpha2old) + (wtilde[k][i]-allfit[k][i]) /sqrt(alpha2) ;
-      }
-    }
-    
   }
   
   /* Step 3 (d) */
