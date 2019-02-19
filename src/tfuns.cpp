@@ -8,8 +8,9 @@
 #include <R_ext/Lapack.h>
 #include "tree.h"
 #include "info.h"
-#include "bd.h"
 #include "funs.h"
+#include "bd.h"
+
 
 /*function to compute the inverse of permuted Sigma */
 void dinvperm(double *sigi,
@@ -361,6 +362,17 @@ double getpb(tree& t, xinfo& xi, pinfo& pi, tree::npv& goodbots)
 //--------------------------------------------------
 //find variables n can split on, put their indices in goodvars
 void getgoodvars(tree::tree_p n, xinfo& xi,  std::vector<size_t>& goodvars, Rcpp::NumericVector& binaryX)
+{
+  int L,U;
+  for(size_t v=0;v!=xi.size();v++) {//try each variable
+    L=0; U = xi[v].size()-1;
+    n->rg(v,&L,&U);
+    if(binaryX[v]==0 && U>=L) goodvars.push_back(v);
+    if(binaryX[v]==1 && L==0 && U==(int)(xi[v].size()-1) ) goodvars.push_back(v);//binary variable not used in the current path to the root
+  }
+}
+
+void getgoodvars(tree::tree_p n, xinfo& xi,  std::vector<size_t>& goodvars, std::vector<double>& binaryX)
 {
   int L,U;
   for(size_t v=0;v!=xi.size();v++) {//try each variable
@@ -943,6 +955,56 @@ void swapkidInd(tree::tree_cp n1, tree::tree_cp n2, int* lind, int* rind){
     return(valid);
   }
 
+bool validswap(tree& xstar,  tree::tree_p nstar, xinfo& xi, int lind, int rind, std::vector<double>& binaryX){
+  
+  //swap rules for nstar
+  size_t kidv, kidc; //kid’s rule
+  if(lind + rind == 2){
+    (nstar->r)->v = nstar->v;  (nstar->r)->c = nstar->c;
+    nstar->v = (nstar->l)->v; nstar->c = (nstar->l)->c;
+    (nstar->l)->v = (nstar->r)->v;  (nstar->l)->c = (nstar->r)->c;
+    kidv = (nstar->r)->v;//splitting var of the child after swapping
+  } else {
+    if(lind == 1){
+      kidv = (nstar->l)->v; kidc = (nstar->l)->c;
+      (nstar->l)->v = nstar->v; (nstar->l)->c = nstar->c;
+      nstar->v = kidv; nstar->c = kidc;
+      kidv = (nstar->l)->v;
+    }
+    if(rind == 1){
+      kidv = (nstar->r)->v; kidc = (nstar->r)->c;
+      (nstar->r)->v = nstar->v; (nstar->r)->c = nstar->c;
+      nstar->v = kidv; nstar->c = kidc;
+      kidv = (nstar->r)->v;
+    }
+  } //end swap in nstar
+  
+  //check range of the splitting variables involved in swapping
+  //along subtree paths
+  bool valid = false;
+  int L, U;
+  size_t dadv = nstar->v;//splitting var of the parent after swapping
+  
+  if(binaryX[dadv] == 0){
+    L = 0; U = xi[dadv].size() -1;
+    nstar->rg(dadv, &L, &U); //[L,U] = range of cutoff for dadv at nstar from root
+    valid = pathcheck(nstar, dadv, L, U);//is dadv valid in subtree after swap?
+  }
+  if(binaryX[dadv] == 1){
+    //binary dadv (at nstar) should not be used in its descendents (will cause empty nodes)
+    if(nstar->nuse(dadv) == 1) valid = true;
+  }
+  if( (dadv != kidv) && valid){
+    //no need to check binary kidv -- it being a previous dad makes it valid in a smaller subtree
+    if(binaryX[kidv] == 0){
+      L = 0; U = xi[kidv].size() -1;
+      nstar->rg(kidv, &L, &U); //[L,U] = range of cutoff for kidv at nstar
+      valid = pathcheck(nstar, kidv, L, U); //is kidv valid in subtree after swap?
+    }
+  }
+  return(valid);
+}
+
   /*Does cutoffs of v in the subtree rooted at n stay in correct range?*/
   /*[L, U] is the range of cutoff for v at the root n*/
   bool pathcheck(tree::tree_p n, size_t v, int L, int U){
@@ -1007,6 +1069,37 @@ void swapkidInd(tree::tree_cp n1, tree::tree_cp n2, int* lind, int* rind){
 
     return(res);
   }
+
+double lpiT(tree::tree_p n, xinfo& xi, pinfo& pi, std::vector<double>& binaryX){
+  
+  double res;
+  std::vector<size_t> goodvars; //variables n can split on
+  
+  size_t dn = n->depth();
+  double pgrow =  pi.alpha/pow(1.0 + dn,pi.beta); //prior prob of n being non terminal
+  
+  if(!(n->l)){ //bottom node
+    res = log(1.0-pgrow);
+  } else {
+    res = log(pgrow);
+    getgoodvars(n, xi, goodvars, binaryX);
+    res -= log(goodvars.size());
+    
+    size_t v = (n->v);
+    if(binaryX[v] == 0){
+      int L,U;
+      L=0; U = xi[v].size()-1;
+      n->rg(v,&L,&U);
+      res -= log(U-L+1); //U-L+1 is number of available split points
+    }
+    //when v is binary, p(choose cutoff) = 1 b.c. all cutoffs are the same
+    //log(1) = 0
+    
+    res += lpiT(n->l,xi, pi, binaryX) + lpiT(n->r,xi, pi, binaryX);
+  }
+  
+  return(res);
+}
 
   /* Calculate integrated likelihood of  the subtree */
   /*If upd == 1, update mu in bottom nodes of subtree rooted at n*/

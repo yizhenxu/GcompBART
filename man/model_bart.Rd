@@ -4,14 +4,19 @@
 \alias{model_bart}
 \title{Bayesian Additive Regression Trees}
 \usage{
-model_bart(formula, data, type, base = NULL, Prior = NULL, Mcmc = NULL,
-  diagnostics = TRUE, make.prediction = TRUE, correction = TRUE,
-  w = NULL, sig = NULL, fitMNP = NULL)
+model_bart(formula = NULL, Yname = NULL, Xname = NULL, data, type,
+  base = NULL, Prior = NULL, Mcmc = NULL, diagnostics = TRUE,
+  make.prediction = TRUE, correction = TRUE, fitMNP = NULL,
+  bylatent = NULL)
 }
 \arguments{
 \item{formula}{response ~ covariates,}
 
-\item{data}{Training Data with the response,}
+\item{Yname}{Name of response,}
+
+\item{Xname}{List of covariate names, with the ith element being the vector of covariate names for the ith latent variable; the order of the latent variables is in the numeric order of response categories after excluding the reference level,}
+
+\item{data}{Training Data with the response and covariates in formula or Xname,}
 
 \item{type}{Type of response, options are "continuous", "binary", and "multinomial",}
 
@@ -23,7 +28,7 @@ The components of Prior are
 \item nu: For continuous response: the degree of freedom in the inverse chi-square prior distribution of the error variance; for multinomial response: The covariance matrix of latent variables is assumed to have prior distribution Inv-Wish(nu, V), nu is the degree of freedom and nu > (nlatent - 1).
 \item sigq: In the case of continuous response, the quantile of the error variance prior that the rough estimate (from linear regression) is placed at.
 \item V : In the case of multinomial response, the positive definite scale matrix in the Inverse-Wishart prior of the covariance matrix.
-\item ntrees : The total number of trees in each round of BART fitting.
+\item ntrees : The total number of trees in each round of BART fitting; this should be a vector with the ith element being the number of trees for the ith latent variable when Yname and Xname are used,
 \item kfac : A tuning parameter that satisfies mu - kfac * sigma = ymin and mu + kfac * sigma = ymax, where mu and sigma are the mean and std of the Gaussian prior distribution of the sum of fit of all trees.
 \item pswap : The prior probability of swap move in simulating trees; default 0, there should be pswap no larger than 1-pbd.
 \item pbd : The prior probability of birth/death move in simulating trees; default 1.
@@ -37,7 +42,8 @@ The components of Prior are
 \item{Mcmc}{List of MCMC starting values, burn-in ... for continuous or binary response: e.g., list(burn = 100, ndraws = 1000); for multinomial response: e.g.  list(sigma0 = diag(p - 1), burn = 100, ndraws = 1000, nSigDr = 50)
 #'The components of Mcmc are
 \itemize{
-\item sigma0 : The starting value of the covariance matrix of latent variables.
+\item w0 : The n x nlatent matrix of starting values for the latent variables; this can be results from the MNP. 
+\item sigma0 : The nlatent x nlatent matrix of starting value for the covariance matrix of latent variables.
 \item nSigDr: User-specified upper limit to repeated draws of the covariance variance matrix of latent variables in each round of posterior draw when condition 10 in Jiao and van Dyk 2015 is not satisfied. Default 50. 
 }}
 
@@ -47,7 +53,9 @@ The components of Prior are
 
 \item{correction}{Analysis applies correction from Jiao and van Dyk (2015) if TRUE (default); framework from Burgette and Nordheim (2012) is used if FALSE,}
 
-\item{fitMNP}{If type is multinomial2, then w is the MNP training latents of n x nlatent, sig is the latent covariance matrix of nlatent x nlatent, and fitMNP is the number of rounds to pre-fit sum-of-trees on the MNP latents,}
+\item{fitMNP}{If type is multinomial, then fitMNP is the number of rounds to pre-fit sum-of-trees on the w0 conditional on sigma0, default is zero; if fitMNP is not zero, there must be input for Mcmc w0 and sigma0,}
+
+\item{bylatent}{If 0 then trees are updated across latents in the order of trees, otherwise across all trees in the order of latents,}
 }
 \value{
 treefit ndraws x n posterior matrix of the training data sum of trees fit,
@@ -83,7 +91,7 @@ x=matrix(runif(n*10),n,10) #10 variables, only first 5 matter
 Ey = f(x)
 y=Ey+sigma*rnorm(n)
 dat = data.frame(x,y)
-fml = as.formula("y ~ X1+X2+X3+X4+X5+X6+X7+X8+X9+X10")
+fml = y ~ X1+X2+X3+X4+X5+X6+X7+X8+X9+X10
 bfit = model_bart(fml, data = dat,
                 Prior = list(nu = 3, sigq = 0.9,
                              ntrees = 100,

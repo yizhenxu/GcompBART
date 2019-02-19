@@ -1,3 +1,6 @@
+#ifndef GUARD_funs_h
+#define GUARD_funs_h
+
 #include <iostream>
 #include "tree.h"
 #include "info.h"
@@ -70,6 +73,7 @@ double pgrow(tree::tree_p n, xinfo& xi, pinfo& pi);
 //--------------------------------------------------
 //find variables n can split on, put their indices in goodvars
 void getgoodvars(tree::tree_p n, xinfo& xi,  std::vector<size_t>& goodvars, Rcpp::NumericVector& binaryX);
+void getgoodvars(tree::tree_p n, xinfo& xi,  std::vector<size_t>& goodvars, std::vector<double>& binaryX);
 //--------------------------------------------------
 //compute prob of a birth, goodbots will contain all the good bottom nodes
 double getpb(tree& t, xinfo& xi, pinfo& pi, tree::npv& goodbots);
@@ -106,10 +110,12 @@ void rMVN(
 void swapkidInd(tree::tree_cp n1, tree::tree_cp n2, int* lind, int* rind);
 
 bool validswap(tree& xstar,  tree::tree_p nstar, xinfo& xi, int lind, int rind, Rcpp::NumericVector& binaryX);
+bool validswap(tree& xstar,  tree::tree_p nstar, xinfo& xi, int lind, int rind, std::vector<double>& binaryX);
 
 bool pathcheck(tree::tree_p n, size_t v, int L, int U);
 
 double lpiT(tree::tree_p n, xinfo& xi, pinfo& pi, Rcpp::NumericVector& binaryX);
+double lpiT(tree::tree_p n, xinfo& xi, pinfo& pi, std::vector<double>& binaryX);
 
 double lilT(std::vector<std::vector<double> >& X, tree::tree_p x,
             tree::tree_p n, xinfo& xi, pinfo& pi, dinfo& di, int upd);
@@ -119,3 +125,5 @@ double lilT1(std::vector<std::vector<double> >& X, size_t ncov, tree& x,
 
 double lilT1(Rcpp::NumericMatrix& X, tree& x,
              tree::tree_p n, xinfo& xi, pinfo& pi, dinfo& di, tree::npv& nbnv, int upd);
+
+#endif

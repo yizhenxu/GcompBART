@@ -128,7 +128,7 @@ BEGIN_RCPP
 END_RCPP
 }
 // mympbartmod2
-List mympbartmod2(NumericMatrix XMat, NumericMatrix sigmai1, NumericMatrix V1, int nu, int nn, int nndim, NumericVector y1, int n_cov, int nd, int burn, int numtrees, int nSigDr, double kfac, double pswap, double pbd, double pb, double alpha, double beta, int nc, int minobs, NumericVector binaryX, int dgn, int Jiao, NumericVector w1, int fitMNP);
+List mympbartmod2(NumericMatrix XMat, NumericMatrix sigmai1, NumericMatrix V1, int nu, int nn, int nndim, NumericVector y1, int n_cov, int nd, int burn, int numtrees, int nSigDr, double kfac, double pswap, double pbd, double pb, double alpha, double beta, int nc, int minobs, NumericVector binaryX, int dgn, int Jiao, NumericMatrix w1, int fitMNP);
 RcppExport SEXP _GcompBART_mympbartmod2(SEXP XMatSEXP, SEXP sigmai1SEXP, SEXP V1SEXP, SEXP nuSEXP, SEXP nnSEXP, SEXP nndimSEXP, SEXP y1SEXP, SEXP n_covSEXP, SEXP ndSEXP, SEXP burnSEXP, SEXP numtreesSEXP, SEXP nSigDrSEXP, SEXP kfacSEXP, SEXP pswapSEXP, SEXP pbdSEXP, SEXP pbSEXP, SEXP alphaSEXP, SEXP betaSEXP, SEXP ncSEXP, SEXP minobsSEXP, SEXP binaryXSEXP, SEXP dgnSEXP, SEXP JiaoSEXP, SEXP w1SEXP, SEXP fitMNPSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
@@ -156,9 +156,45 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< NumericVector >::type binaryX(binaryXSEXP);
     Rcpp::traits::input_parameter< int >::type dgn(dgnSEXP);
     Rcpp::traits::input_parameter< int >::type Jiao(JiaoSEXP);
-    Rcpp::traits::input_parameter< NumericVector >::type w1(w1SEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type w1(w1SEXP);
     Rcpp::traits::input_parameter< int >::type fitMNP(fitMNPSEXP);
     rcpp_result_gen = Rcpp::wrap(mympbartmod2(XMat, sigmai1, V1, nu, nn, nndim, y1, n_cov, nd, burn, numtrees, nSigDr, kfac, pswap, pbd, pb, alpha, beta, nc, minobs, binaryX, dgn, Jiao, w1, fitMNP));
+    return rcpp_result_gen;
+END_RCPP
+}
+// mympbartmod3
+List mympbartmod3(NumericMatrix& XMat1, NumericMatrix& sigmai1, NumericMatrix& V1, int nu, int nn, int nndim, NumericVector& y1, IntegerVector& ncov, int nd, int burn, IntegerVector& m, int nSigDr, double kfac, double pswap, double pbd, double pb, double alpha, double beta, int nc, int minobs, NumericVector& binaryX1, int dgn, int Jiao, NumericMatrix& w1, int fitMNP, int bylatent);
+RcppExport SEXP _GcompBART_mympbartmod3(SEXP XMat1SEXP, SEXP sigmai1SEXP, SEXP V1SEXP, SEXP nuSEXP, SEXP nnSEXP, SEXP nndimSEXP, SEXP y1SEXP, SEXP ncovSEXP, SEXP ndSEXP, SEXP burnSEXP, SEXP mSEXP, SEXP nSigDrSEXP, SEXP kfacSEXP, SEXP pswapSEXP, SEXP pbdSEXP, SEXP pbSEXP, SEXP alphaSEXP, SEXP betaSEXP, SEXP ncSEXP, SEXP minobsSEXP, SEXP binaryX1SEXP, SEXP dgnSEXP, SEXP JiaoSEXP, SEXP w1SEXP, SEXP fitMNPSEXP, SEXP bylatentSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericMatrix& >::type XMat1(XMat1SEXP);
+    Rcpp::traits::input_parameter< NumericMatrix& >::type sigmai1(sigmai1SEXP);
+    Rcpp::traits::input_parameter< NumericMatrix& >::type V1(V1SEXP);
+    Rcpp::traits::input_parameter< int >::type nu(nuSEXP);
+    Rcpp::traits::input_parameter< int >::type nn(nnSEXP);
+    Rcpp::traits::input_parameter< int >::type nndim(nndimSEXP);
+    Rcpp::traits::input_parameter< NumericVector& >::type y1(y1SEXP);
+    Rcpp::traits::input_parameter< IntegerVector& >::type ncov(ncovSEXP);
+    Rcpp::traits::input_parameter< int >::type nd(ndSEXP);
+    Rcpp::traits::input_parameter< int >::type burn(burnSEXP);
+    Rcpp::traits::input_parameter< IntegerVector& >::type m(mSEXP);
+    Rcpp::traits::input_parameter< int >::type nSigDr(nSigDrSEXP);
+    Rcpp::traits::input_parameter< double >::type kfac(kfacSEXP);
+    Rcpp::traits::input_parameter< double >::type pswap(pswapSEXP);
+    Rcpp::traits::input_parameter< double >::type pbd(pbdSEXP);
+    Rcpp::traits::input_parameter< double >::type pb(pbSEXP);
+    Rcpp::traits::input_parameter< double >::type alpha(alphaSEXP);
+    Rcpp::traits::input_parameter< double >::type beta(betaSEXP);
+    Rcpp::traits::input_parameter< int >::type nc(ncSEXP);
+    Rcpp::traits::input_parameter< int >::type minobs(minobsSEXP);
+    Rcpp::traits::input_parameter< NumericVector& >::type binaryX1(binaryX1SEXP);
+    Rcpp::traits::input_parameter< int >::type dgn(dgnSEXP);
+    Rcpp::traits::input_parameter< int >::type Jiao(JiaoSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix& >::type w1(w1SEXP);
+    Rcpp::traits::input_parameter< int >::type fitMNP(fitMNPSEXP);
+    Rcpp::traits::input_parameter< int >::type bylatent(bylatentSEXP);
+    rcpp_result_gen = Rcpp::wrap(mympbartmod3(XMat1, sigmai1, V1, nu, nn, nndim, y1, ncov, nd, burn, m, nSigDr, kfac, pswap, pbd, pb, alpha, beta, nc, minobs, binaryX1, dgn, Jiao, w1, fitMNP, bylatent));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -223,6 +259,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_GcompBART_mympbartmod", (DL_FUNC) &_GcompBART_mympbartmod, 23},
     {"_GcompBART_mympbartmod1", (DL_FUNC) &_GcompBART_mympbartmod1, 23},
     {"_GcompBART_mympbartmod2", (DL_FUNC) &_GcompBART_mympbartmod2, 25},
+    {"_GcompBART_mympbartmod3", (DL_FUNC) &_GcompBART_mympbartmod3, 26},
     {"_GcompBART_mympbartpred", (DL_FUNC) &_GcompBART_mympbartpred, 7},
     {"_GcompBART_mypbartmod", (DL_FUNC) &_GcompBART_mypbartmod, 17},
     {"_GcompBART_rcpp_hello_world", (DL_FUNC) &_GcompBART_rcpp_hello_world, 0},

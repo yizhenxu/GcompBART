@@ -30,7 +30,7 @@
 #'                              nc = 100, minobsnode = 10),
 #'                 Mcmc = list(burn=100, ndraws = 88))
 #'DiagPlot(bfit, 0)
-#'@import bayesm mlbench mlogit cvTools stats
+#'@import stats
 #'@export
 DiagPlot <- function(bfit, plot_type, byrow = TRUE){
 

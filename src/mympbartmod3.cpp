@@ -12,6 +12,7 @@
 #include "funs.h"
 #include "tree.h"
 #include "info.h"
+#include "bd.h"
 using namespace Rcpp;
 
 // [[Rcpp::export]]
@@ -105,15 +106,15 @@ List mympbartmod3(NumericMatrix& XMat1,
   }
   
   /*define binaryX as a list of numericvectors*/
-  List binaryX(nndim);
+  std::vector<std::vector<double> > binaryX;
+  binaryX.resize(nndim);
   itemp = 0;
   for(int j=0; j < nndim; j++){
-    NumericVector btmp(ncov[j]);
+    binaryX[j].resize(ncov[j]);
     for(int k=0; k < ncov[j]; k++){
-      btmp[k] = binaryX1[itemp];
+      binaryX[j][k] = binaryX1[itemp];
       itemp++;
     }
-    binaryX[j] = btmp;
   }
   
   size_t minobsnode = (size_t) minobs;
@@ -446,7 +447,7 @@ List mympbartmod3(NumericMatrix& XMat1,
         
         for(int k=0; k < nndim; k++){
           
-          dinvperm(sigmai, nndim, k, PerSigInv);
+          dinvperm( &sigmai[0], nndim, k, PerSigInv);
           cvar=1/PerSigInv[nndim-1][nndim-1];
           condsig[k]=sqrt(cvar);
           
@@ -476,9 +477,9 @@ List mympbartmod3(NumericMatrix& XMat1,
             pi.tau=tauList[k];
             
             if(dgn){
-              bd1(XMat[k], (size_t) ncov[k], t[k][ntree], xi[k], di, pi, minobsnode, binaryX[k], &nLtDtmp[k][ntree], &percAtmp[k][ntree], &numNodestmp[k][ntree], &numLeavestmp[k][ntree], &treeDepthtmp[k][ntree], incProptmp[k], L1[k], L2[k], L3[k], L4[k], L5[k], L6[k], L7[k], L8[k]);
+              bd1F(XMat[k], (size_t) ncov[k], t[k][ntree], xi[k], di, pi, minobsnode, binaryX[k], &nLtDtmp[k][ntree], &percAtmp[k][ntree], &numNodestmp[k][ntree], &numLeavestmp[k][ntree], &treeDepthtmp[k][ntree], incProptmp[k], L1[k], L2[k], L3[k], L4[k], L5[k], L6[k], L7[k], L8[k]);
             } else {
-              bd(XMat[k], (size_t) ncov[k], t[k][ntree], xi[k], di, pi, minobsnode, binaryX[k], L1[k], L2[k], L3[k], L4[k], L5[k], L6[k], L7[k], L8[k]);
+              bdF(XMat[k], (size_t) ncov[k], t[k][ntree], xi[k], di, pi, minobsnode, binaryX[k], L1[k], L2[k], L3[k], L4[k], L5[k], L6[k], L7[k], L8[k]);
             }
             
             fit(t[k][ntree], XMat[k], nn, ncov[k], xi[k], ftemp[k][ntree]);
@@ -499,7 +500,7 @@ List mympbartmod3(NumericMatrix& XMat1,
         
         
         for(int k=0; k < nndim; k++){
-          dinvperm(sigmai, nndim, k, PerSigInvList[k]);
+          dinvperm( &sigmai[0], nndim, k, PerSigInvList[k]);
           cvar=1/PerSigInvList[k][nndim-1][nndim-1];
           condsig[k]=sqrt(cvar);//condsig[k] is sqrt psi_k
         }
@@ -534,9 +535,9 @@ List mympbartmod3(NumericMatrix& XMat1,
               pi.tau=tauList[k];
               
               if(dgn){
-                bd1(XMat[k], (size_t) ncov[k], t[k][ntree], xi[k], di, pi, minobsnode, binaryX[k], &nLtDtmp[k][ntree], &percAtmp[k][ntree], &numNodestmp[k][ntree], &numLeavestmp[k][ntree], &treeDepthtmp[k][ntree], incProptmp[k], L1[k], L2[k], L3[k], L4[k], L5[k], L6[k], L7[k], L8[k]);
+                bd1F(XMat[k], (size_t) ncov[k], t[k][ntree], xi[k], di, pi, minobsnode, binaryX[k], &nLtDtmp[k][ntree], &percAtmp[k][ntree], &numNodestmp[k][ntree], &numLeavestmp[k][ntree], &treeDepthtmp[k][ntree], incProptmp[k], L1[k], L2[k], L3[k], L4[k], L5[k], L6[k], L7[k], L8[k]);
               } else {
-                bd(XMat[k], (size_t) ncov[k], t[k][ntree], xi[k], di, pi, minobsnode, binaryX[k], L1[k], L2[k], L3[k], L4[k], L5[k], L6[k], L7[k], L8[k]);
+                bdF(XMat[k], (size_t) ncov[k], t[k][ntree], xi[k], di, pi, minobsnode, binaryX[k], L1[k], L2[k], L3[k], L4[k], L5[k], L6[k], L7[k], L8[k]);
               }
               
               fit(t[k][ntree], XMat[k], nn, ncov[k], xi[k], ftemp[k][ntree]);
@@ -739,7 +740,7 @@ List mympbartmod3(NumericMatrix& XMat1,
       
       for(int k=0; k < nndim; k++){
         
-        dinvperm(sigmai, nndim, k, PerSigInv);
+        dinvperm( &sigmai[0], nndim, k, PerSigInv);
         cvar=1/PerSigInv[nndim-1][nndim-1];
         condsig[k]=sqrt(cvar);
         
@@ -769,9 +770,9 @@ List mympbartmod3(NumericMatrix& XMat1,
           pi.tau=tauList[k];
           
           if(dgn){
-            bd1(XMat[k], (size_t) ncov[k], t[k][ntree], xi[k], di, pi, minobsnode, binaryX[k], &nLtDtmp[k][ntree], &percAtmp[k][ntree], &numNodestmp[k][ntree], &numLeavestmp[k][ntree], &treeDepthtmp[k][ntree], incProptmp[k], L1[k], L2[k], L3[k], L4[k], L5[k], L6[k], L7[k], L8[k]);
+            bd1F(XMat[k], (size_t) ncov[k], t[k][ntree], xi[k], di, pi, minobsnode, binaryX[k], &nLtDtmp[k][ntree], &percAtmp[k][ntree], &numNodestmp[k][ntree], &numLeavestmp[k][ntree], &treeDepthtmp[k][ntree], incProptmp[k], L1[k], L2[k], L3[k], L4[k], L5[k], L6[k], L7[k], L8[k]);
           } else {
-            bd(XMat[k], (size_t) ncov[k], t[k][ntree], xi[k], di, pi, minobsnode, binaryX[k], L1[k], L2[k], L3[k], L4[k], L5[k], L6[k], L7[k], L8[k]);
+            bdF(XMat[k], (size_t) ncov[k], t[k][ntree], xi[k], di, pi, minobsnode, binaryX[k], L1[k], L2[k], L3[k], L4[k], L5[k], L6[k], L7[k], L8[k]);
           }
           
           fit(t[k][ntree], XMat[k], nn, ncov[k], xi[k], ftemp[k][ntree]);
@@ -790,7 +791,7 @@ List mympbartmod3(NumericMatrix& XMat1,
       
       
       for(int k=0; k < nndim; k++){
-        dinvperm(sigmai, nndim, k, PerSigInvList[k]);
+        dinvperm( &sigmai[0], nndim, k, PerSigInvList[k]);
         cvar=1/PerSigInvList[k][nndim-1][nndim-1];
         condsig[k]=sqrt(cvar);//condsig[k] is sqrt psi_k
       }
@@ -825,9 +826,9 @@ List mympbartmod3(NumericMatrix& XMat1,
             pi.tau=tauList[k];
             
             if(dgn){
-              bd1(XMat[k], (size_t) ncov[k], t[k][ntree], xi[k], di, pi, minobsnode, binaryX[k], &nLtDtmp[k][ntree], &percAtmp[k][ntree], &numNodestmp[k][ntree], &numLeavestmp[k][ntree], &treeDepthtmp[k][ntree], incProptmp[k], L1[k], L2[k], L3[k], L4[k], L5[k], L6[k], L7[k], L8[k]);
+              bd1F(XMat[k], (size_t) ncov[k], t[k][ntree], xi[k], di, pi, minobsnode, binaryX[k], &nLtDtmp[k][ntree], &percAtmp[k][ntree], &numNodestmp[k][ntree], &numLeavestmp[k][ntree], &treeDepthtmp[k][ntree], incProptmp[k], L1[k], L2[k], L3[k], L4[k], L5[k], L6[k], L7[k], L8[k]);
             } else {
-              bd(XMat[k], (size_t) ncov[k], t[k][ntree], xi[k], di, pi, minobsnode, binaryX[k], L1[k], L2[k], L3[k], L4[k], L5[k], L6[k], L7[k], L8[k]);
+              bdF(XMat[k], (size_t) ncov[k], t[k][ntree], xi[k], di, pi, minobsnode, binaryX[k], L1[k], L2[k], L3[k], L4[k], L5[k], L6[k], L7[k], L8[k]);
             }
             
             fit(t[k][ntree], XMat[k], nn, ncov[k], xi[k], ftemp[k][ntree]);

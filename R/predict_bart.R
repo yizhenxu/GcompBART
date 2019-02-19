@@ -31,7 +31,7 @@
 #'                 Mcmc = list(burn=100, ndraws = 1000))
 #'
 #'newy = predict_bart(bfit, newx)
-#'@import bayesm mlbench mlogit cvTools stats
+#'@import stats
 #'@export
 #'@useDynLib GcompBART
 predict_bart  <- function(obj, newdata = NULL, Gcomp = FALSE)

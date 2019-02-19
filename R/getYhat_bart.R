@@ -10,7 +10,7 @@
 #'@param sigmas Posteriors of the covariance matrix in 2 dimensions - (ndim x ndim) x ndraws; the jth column is the covariance matrix estimated from jth round of posterior draw by column,
 #'@param alpha The estimated working parameter for scaling the sum of trees fit, 
 #'@return yhat Simulated outcome as a vector of length n,
-#'@import MASS bayesm mlbench mlogit cvTools stats
+#'@import stats
 #'@export
 
 getYhat_bart = function(j, ndim, n, releveled, maxy, mu, sigmas, alpha){
