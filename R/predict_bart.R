@@ -81,8 +81,7 @@ predict_bart  <- function(obj, newdata = NULL, Gcomp = FALSE)
       stop(paste("Error: testn does not equal to n x ndraws."))
   }
   
-  
-  cat("Number of trees: ", ntrees, ".\n\n", sep="")
+  cat("Number of trees: ", paste(ntrees," "), ".\n\n", sep="")
   cat("Number of draws: ", ndraws, ".\n\n", sep="")
   cat("burn-in: ", burn, ".\n\n", sep="")
   
