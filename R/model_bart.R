@@ -13,7 +13,7 @@
 #'\item nu: For continuous response: the degree of freedom in the inverse chi-square prior distribution of the error variance; for multinomial response: The covariance matrix of latent variables is assumed to have prior distribution Inv-Wish(nu, V), nu is the degree of freedom and nu > (nlatent - 1).
 #'\item sigq: In the case of continuous response, the quantile of the error variance prior that the rough estimate (from linear regression) is placed at.
 #'\item V : In the case of multinomial response, the positive definite scale matrix in the Inverse-Wishart prior of the covariance matrix.
-#'\item ntrees : The total number of trees in each round of BART fitting; this should be a vector with the ith element being the number of trees for the ith latent variable when Yname and Xname are used,
+#'\item ntrees : The total number of trees in each round of BART fitting, or a vector with the ith element being the number of trees for the ith latent variable when Yname and Xname are used,
 #'\item kfac : A tuning parameter that satisfies mu - kfac * sigma = ymin and mu + kfac * sigma = ymax, where mu and sigma are the mean and std of the Gaussian prior distribution of the sum of fit of all trees.
 #'\item pswap : The prior probability of swap move in simulating trees; default 0, there should be pswap no larger than 1-pbd.
 #'\item pbd : The prior probability of birth/death move in simulating trees; default 1.
@@ -297,7 +297,7 @@ model_bart  <- function(formula = NULL, Yname = NULL, Xname = NULL, data, type, 
     
   }
 
-  cat("Number of trees: ", ntrees, ".\n\n", sep="")
+  cat("Number of trees: ", paste(ntrees," "), ".\n\n", sep="")
   cat("Number of draws: ", ndraws, ".\n\n", sep="")
   cat("burn-in: ", burn, ".\n\n", sep="") 
   

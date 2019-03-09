@@ -127,21 +127,27 @@ List mympbartmod3(NumericMatrix& XMat1,
   
   std::vector<std::vector<double> > allfit; /* The sum of fit of all trees for train.data (nlatent x nsub)*/
   std::vector<std::vector<double> > wtilde; /* (nlatent x nsub) */
+  std::vector<std::vector<double> > stemp0; /* The second term in pseudo outcome for bytree*/
   allfit.resize(di.n_dim);
   wtilde.resize(di.n_dim);
-  
+  stemp0.resize(di.n_dim);
   for(size_t k=0; k<di.n_dim; k++){
     allfit[k].resize(di.n_samp);
     wtilde[k].resize(di.n_samp);
+    stemp0[k].resize(di.n_samp);
   }
   
   for(size_t k=0; k<di.n_dim; k++){
     for(size_t i=0;i<di.n_samp;i++) {
       allfit[k][i] = 0.0;
       wtilde[k][i] = 0.0;
+      stemp0[k][i] = 0.0;
     }
   }
   
+  std::vector<double> stemp; /* The second term in pseudo outcome for bylatent*/
+  stemp.resize(nn);
+    
   /* fit of current tree */
   std::vector<std::vector<std::vector<double> > > ftemp; /*m x nsub, (i,j) is the current fit of tree i person j*/
   ftemp.resize(nndim);
@@ -191,8 +197,6 @@ List mympbartmod3(NumericMatrix& XMat1,
   for(size_t k=0; k<di.n_dim; k++){
     r[k].resize(di.n_samp);
   }
-  std::vector<double> stemp;
-  stemp.resize(nn);
   
   //initialize vtemp = (w - allfit)[-k] 
   std::vector<double> vtemp;
@@ -495,10 +499,8 @@ List mympbartmod3(NumericMatrix& XMat1,
       } else { 
         //bytrees
         //for drawing sth tree for kth level in tth round, 
-        //original version: T(k,s)^t|w^t, T(j,l)^t, [j=1...p-1, l<s], T(i,h)^(t-1), [i=1...p-1, h>=s] 
-        //new version: T(k,s)^t|w^t, T(j,l)^t, [j=1...p-1, l<s OR j<k, l=s], T(i,h)^(t-1), [i=1...p-1, h>s OR i>k,h=s]
-        
-        
+        //T(k,s)^t|w^t, T(j,l)^t, [j=1...p-1, l<s], T(i,h)^(t-1), [i=1...p-1, h>=s] 
+  
         for(int k=0; k < nndim; k++){
           dinvperm( &sigmai[0], nndim, k, PerSigInvList[k]);
           cvar=1/PerSigInvList[k][nndim-1][nndim-1];
@@ -517,15 +519,22 @@ List mympbartmod3(NumericMatrix& XMat1,
                   if(j != k)
                     vtemp[itemp++] = w[i*nndim + j]-allfit[j][i];
                 }
-                stemp[i] = 0;
+                stemp0[k][i] = 0;
                 for(int j=0; j < (nndim-1); j++){
-                  stemp[i] += PerSigInvList[k][nndim-1][j]*vtemp[j]*condsig[k]*condsig[k];//pow() requires cmath.h
+                  stemp0[k][i] += PerSigInvList[k][nndim-1][j]*vtemp[j]*condsig[k]*condsig[k];//pow() requires cmath.h
                 }
-              }
+              }//i
+              
+            }//if ntree
+          }//k
+          
+          for(int k=0; k < nndim; k++){//start the tree update for ntree at dim k
+            
+            if(ntree < m[k]){
               
               for(int i=0; i < nn; i++){          
                 allfit[k][i] -= ftemp[k][ntree][i];
-                r[k][i] = w[i*di.n_dim + k] - allfit[k][i] + stemp[i];
+                r[k][i] = w[i*di.n_dim + k] - allfit[k][i] + stemp0[k][i];
               }
               
               //update tree
@@ -786,10 +795,8 @@ List mympbartmod3(NumericMatrix& XMat1,
     } else { 
       //bytrees
       //for drawing sth tree for kth level in tth round, 
-      //original version: T(k,s)^t|w^t, T(j,l)^t, [j=1...p-1, l<s], T(i,h)^(t-1), [i=1...p-1, h>=s] 
-      //new version: T(k,s)^t|w^t, T(j,l)^t, [j=1...p-1, l<s OR j<k, l=s], T(i,h)^(t-1), [i=1...p-1, h>s OR i>k,h=s]
-      
-      
+      //T(k,s)^t|w^t, T(j,l)^t, [j=1...p-1, l<s], T(i,h)^(t-1), [i=1...p-1, h>=s] 
+
       for(int k=0; k < nndim; k++){
         dinvperm( &sigmai[0], nndim, k, PerSigInvList[k]);
         cvar=1/PerSigInvList[k][nndim-1][nndim-1];
@@ -808,15 +815,22 @@ List mympbartmod3(NumericMatrix& XMat1,
                 if(j != k)
                   vtemp[itemp++] = w[i*nndim + j]-allfit[j][i];
               }
-              stemp[i] = 0;
+              stemp0[k][i] = 0;
               for(int j=0; j < (nndim-1); j++){
-                stemp[i] += PerSigInvList[k][nndim-1][j]*vtemp[j]*condsig[k]*condsig[k];//pow() requires cmath.h
+                stemp0[k][i] += PerSigInvList[k][nndim-1][j]*vtemp[j]*condsig[k]*condsig[k];//pow() requires cmath.h
               }
-            }
+            }//i
+            
+          }//if ntree
+        }//k
+        
+        for(int k=0; k < nndim; k++){//start the tree update for ntree at dim k
+          
+          if(ntree < m[k]){
             
             for(int i=0; i < nn; i++){          
               allfit[k][i] -= ftemp[k][ntree][i];
-              r[k][i] = w[i*di.n_dim + k] - allfit[k][i] + stemp[i];
+              r[k][i] = w[i*di.n_dim + k] - allfit[k][i] + stemp0[k][i];
             }
             
             //update tree
