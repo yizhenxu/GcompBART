@@ -126,4 +126,5 @@ double lilT1(std::vector<std::vector<double> >& X, size_t ncov, tree& x,
 double lilT1(Rcpp::NumericMatrix& X, tree& x,
              tree::tree_p n, xinfo& xi, pinfo& pi, dinfo& di, tree::npv& nbnv, int upd);
 
+Rcpp::NumericMatrix nmbind(Rcpp::NumericMatrix& a, Rcpp::NumericMatrix& b);
 #endif

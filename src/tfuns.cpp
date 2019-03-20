@@ -1346,3 +1346,18 @@ double lpiT(tree::tree_p n, xinfo& xi, pinfo& pi, std::vector<double>& binaryX){
     delete[] bnsy2; bnsy2 = 0;
     return(LT);
   }
+
+  /*Fast cbind with numericmatrix*/
+  Rcpp::NumericMatrix nmbind(Rcpp::NumericMatrix& a, Rcpp::NumericMatrix& b){
+    int acol = a.ncol();
+    int bcol = b.ncol();
+    Rcpp::NumericMatrix out = no_init_matrix(a.nrow(), acol + bcol);
+    for(int j = 0; j < acol+bcol; j++){
+      if(j < acol){
+        out(_,j) = a(_,j);
+      } else {
+        out(_,j) = b(_, j - acol);
+      }
+    }
+    return out;
+  }

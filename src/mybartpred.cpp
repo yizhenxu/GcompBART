@@ -26,8 +26,8 @@ List mybartpred(int Gcomp,
                 NumericVector L8,
                 NumericMatrix testXMat,
                 int n_cov, 
-                int testn,
-                int nd,
+                int testn, int nthin,
+                int nd, int npost,
                 int burn,
                 int numtrees,
                 NumericMatrix xi1) {
@@ -77,12 +77,13 @@ List mybartpred(int Gcomp,
   time_t tp;
   int time1 = time(&tp);
   
-  /* Initialize counters for outputs psigmasample, vec_test and vec_train */
+  /* Initialize counters for outputs psigmasample, vec_test */
   int countvectest = 0;
+  int thincount = nthin;
   
-  for(int loop=0;loop<(nd+burn);loop++) { /* Start posterior draws */
+  for(int loop=0;loop<(npost+burn);loop++) { /* Start posterior draws */
     
-    if(loop%100==0) Rprintf("\n iteration: %d of %d \n",loop, nd+burn);
+    if(loop%100==0) Rprintf("\n iteration: %d of %d \n",loop, npost+burn);
     
     /* Step 1 */
     /* See tree sampling theory.doc for explanation */
@@ -144,29 +145,36 @@ List mybartpred(int Gcomp,
     
     if(loop>=burn){
       
-      for(size_t k=0; k<dip.n_samp; k++){
-        ppredmeanvec[k] = 0.0;
-      }
-      
-      if(Gcomp == 1){
-        testXMat1 = testXMat(Rcpp::Range((loop-burn)*testn, (loop-burn+1)*testn - 1), Rcpp::Range(0, n_cov - 1));
-        for(size_t j=0;j<m;j++) {
-          fit(t[j], testXMat1, dip, xi, fpredtemp);
-          for(size_t k=0;k<dip.n_samp;k++) ppredmeanvec[k] += fpredtemp[k];
+      if(thincount==nthin){
+        for(size_t k=0; k<dip.n_samp; k++){
+          ppredmeanvec[k] = 0.0;
         }
+        
+        if(Gcomp == 1){
+          testXMat1 = testXMat(Rcpp::Range(countvectest*testn, (countvectest+1)*testn - 1), Rcpp::Range(0, n_cov - 1));
+          for(size_t j=0;j<m;j++) {
+            fit(t[j], testXMat1, dip, xi, fpredtemp);
+            for(size_t k=0;k<dip.n_samp;k++) ppredmeanvec[k] += fpredtemp[k];
+          }
+        } else {
+          for(size_t j=0;j<m;j++) {
+            fit(t[j], testXMat, dip, xi, fpredtemp);
+            for(size_t k=0;k<dip.n_samp;k++) ppredmeanvec[k] += fpredtemp[k];
+          }
+        }
+        
+        for(size_t k = 0; k <dip.n_samp; k++){
+          vec_test[countvectest] = ppredmeanvec[k];
+          countvectest++;
+        }//end prediction for test
+        
+        thincount = 0;
       } else {
-        for(size_t j=0;j<m;j++) {
-          fit(t[j], testXMat, dip, xi, fpredtemp);
-          for(size_t k=0;k<dip.n_samp;k++) ppredmeanvec[k] += fpredtemp[k];
-        }
-      }
+        thincount++;
+      }//end thincount==nthin
       
-      for(size_t k = 0; k <dip.n_samp; k++){
-        vec_test[countvectest] = ppredmeanvec[k];
-        countvectest++;
-      }//end prediction for test
       
-    }//end prediction for current loop
+    }//end loop>=burn
     
     
   } //end of loop

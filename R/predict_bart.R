@@ -4,6 +4,7 @@
 #'@param obj Fitted model object from BART_mod,
 #'@param newdata The data matrix to look for variables with which to predict, typically without the response; if Gcomp equals TRUE, number of rows should equal n x ndraws, where n is the number of subject. For the ith subject, (i, i+n, ..., i+(ndraws-1)n) rows are its simulated posterior outcomes from the previous simulation,
 #'@param Gcomp Make predictions in the format of dynamic G-computation if TRUE; the default is FALSE,
+#'@param nthin Number of posterior samples to skip between every two draws,
 #'@return treefit ndraws x n posterior matrix of the sum of trees fit,
 #'@return samp_y ndraws x n posterior matrix of the simulated outcome,
 #'@return samp_treefit ndraws x n posterior matrix of predicted outcome based only on the sum of trees fit; this is only for type equals "multinomial",
@@ -34,7 +35,7 @@
 #'@import stats
 #'@export
 #'@useDynLib GcompBART
-predict_bart  <- function(obj, newdata = NULL, Gcomp = FALSE)
+predict_bart  <- function(obj, nthin = 0, newdata = NULL, Gcomp = FALSE)
 {
   if(is.data.frame(newdata)) newdata = as.matrix(newdata)
   
@@ -71,19 +72,22 @@ predict_bart  <- function(obj, newdata = NULL, Gcomp = FALSE)
   
   ntrees = obj$ntrees
   burn = obj$burn
-  ndraws = obj$ndraws
-      
-  sigmasample = obj$sigmasample #on the scale of original data
+  npost = obj$ndraws
+  
+  dloc = seq(1, npost, nthin+1)
+  ndraws = length(dloc)
+  sigmasample = obj$sigmasample[dloc] #on the scale of original data
   
   if(Gcomp){
     testn = testn / ndraws
     if(testn %% 1 != 0)
-      stop(paste("Error: testn does not equal to n x ndraws."))
+      stop(paste("Error: testn does not equal to n x ndraws (after thinning)."))
   }
   
   cat("Number of trees: ", paste(ntrees," "), ".\n\n", sep="")
-  cat("Number of draws: ", ndraws, ".\n\n", sep="")
   cat("burn-in: ", burn, ".\n\n", sep="")
+  cat("Number of posteriors after burn-in: ", npost, ".\n\n", sep="")
+  cat("Number of draws after thinning: ", ndraws, ".\n\n", sep="")
   
   L1 = obj$TreeMod[[1]]
   L2 = obj$TreeMod[[2]]
@@ -107,7 +111,7 @@ predict_bart  <- function(obj, newdata = NULL, Gcomp = FALSE)
   if(obj$type == "continuous"){
     rgy = obj$rgy
     
-    res =   mybartpred(Gcomp,
+    res =   mybartpred(as.integer(Gcomp),
                        L1,
                        L2,
                        L3,
@@ -118,8 +122,8 @@ predict_bart  <- function(obj, newdata = NULL, Gcomp = FALSE)
                        L8,
                        Xtest,
                        as.integer(ncol(Xtest)),
-                       as.integer(testn),
-                       as.integer(ndraws),
+                       as.integer(testn), as.integer(nthin),
+                       as.integer(ndraws), as.integer(npost),
                        as.integer(burn),
                        as.integer(ntrees),
                        xi)
@@ -134,7 +138,7 @@ predict_bart  <- function(obj, newdata = NULL, Gcomp = FALSE)
 
   } else if(obj$type == "binary"){
     
-    res =   mybartpred(Gcomp,
+    res =   mybartpred(as.integer(Gcomp),
                        L1,
                        L2,
                        L3,
@@ -145,8 +149,8 @@ predict_bart  <- function(obj, newdata = NULL, Gcomp = FALSE)
                        L8,
                        Xtest,
                        as.integer(ncol(Xtest)),
-                       as.integer(testn),
-                       as.integer(ndraws),
+                       as.integer(testn), as.integer(nthin),
+                       as.integer(ndraws), as.integer(npost),
                        as.integer(burn),
                        as.integer(ntrees),
                        xi)
@@ -175,7 +179,7 @@ predict_bart  <- function(obj, newdata = NULL, Gcomp = FALSE)
       Lk7 = obj$TreeMod[[7]][[i]]
       Lk8 = obj$TreeMod[[8]][[i]]
       
-      res =   mybartpred(Gcomp,
+      res =   mybartpred(as.integer(Gcomp),
                          Lk1,
                          Lk2,
                          Lk3,
@@ -186,8 +190,8 @@ predict_bart  <- function(obj, newdata = NULL, Gcomp = FALSE)
                          Lk8,
                          Xtest[[i]],
                          as.integer(ncol(Xtest[[i]])),
-                         as.integer(testn),
-                         as.integer(ndraws),
+                         as.integer(testn), as.integer(nthin),
+                         as.integer(ndraws), as.integer(npost),
                          as.integer(burn),
                          as.integer(ntrees[i]),
                          xi[[i]])
@@ -227,7 +231,7 @@ predict_bart  <- function(obj, newdata = NULL, Gcomp = FALSE)
       Lk7 = obj$TreeMod[[7]][[i]]
       Lk8 = obj$TreeMod[[8]][[i]]
       
-      res =   mybartpred(Gcomp,
+      res =   mybartpred(as.integer(Gcomp),
                          Lk1,
                          Lk2,
                          Lk3,
@@ -238,8 +242,8 @@ predict_bart  <- function(obj, newdata = NULL, Gcomp = FALSE)
                          Lk8,
                          Xtest,
                          as.integer(ncol(Xtest)),
-                         as.integer(testn),
-                         as.integer(ndraws),
+                         as.integer(testn), as.integer(nthin),
+                         as.integer(ndraws), as.integer(npost),
                          as.integer(burn),
                          as.integer(ntrees),
                          xi)
@@ -272,7 +276,7 @@ predict_bart  <- function(obj, newdata = NULL, Gcomp = FALSE)
         Lk7 = obj$TreeMod[[7]][[i]]
         Lk8 = obj$TreeMod[[8]][[i]]
         
-        res =   mybartpred(Gcomp,
+        res =   mybartpred(as.integer(Gcomp),
                            Lk1,
                            Lk2,
                            Lk3,
@@ -283,8 +287,8 @@ predict_bart  <- function(obj, newdata = NULL, Gcomp = FALSE)
                            Lk8,
                            Xtest,
                            as.integer(ncol(Xtest)),
-                           as.integer(testn),
-                           as.integer(ndraws),
+                           as.integer(testn), as.integer(nthin),
+                           as.integer(ndraws), as.integer(npost),
                            as.integer(burn),
                            as.integer(ntrees),
                            xi)
@@ -295,7 +299,7 @@ predict_bart  <- function(obj, newdata = NULL, Gcomp = FALSE)
       
       res =   mympbartpred(as.integer(obj$ndim),
                          as.integer(testn),
-                         as.integer(ndraws),
+                         as.integer(ndraws), 
                          tmp, 
                          obj$sigmasample, 
                          obj$working_param,
@@ -308,7 +312,7 @@ predict_bart  <- function(obj, newdata = NULL, Gcomp = FALSE)
       
       samp_treefit =  obj$releveled[pclass] #vector of length n
       samp_treefit = matrix(samp_treefit, nrow = testn)
-    }
+    }#end if(0)
     
   }
     
