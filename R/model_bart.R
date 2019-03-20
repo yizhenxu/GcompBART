@@ -66,7 +66,7 @@
 #'                              nc = 100, minobsnode = 10),
 #'                 Mcmc = list(burn=100, ndraws = 1000))
 #'
-#'@import stats
+#'@import stats mlogit
 #'@export
 #'@useDynLib GcompBART
 model_bart  <- function(formula = NULL, Yname = NULL, Xname = NULL, data, type, base = NULL,

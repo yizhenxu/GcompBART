@@ -36,8 +36,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // mybartpred
-List mybartpred(int Gcomp, NumericVector L1, NumericVector L2, NumericVector L3, NumericVector L4, NumericVector L5, NumericVector L6, NumericVector L7, NumericVector L8, NumericMatrix testXMat, int n_cov, int testn, int nd, int burn, int numtrees, NumericMatrix xi1);
-RcppExport SEXP _GcompBART_mybartpred(SEXP GcompSEXP, SEXP L1SEXP, SEXP L2SEXP, SEXP L3SEXP, SEXP L4SEXP, SEXP L5SEXP, SEXP L6SEXP, SEXP L7SEXP, SEXP L8SEXP, SEXP testXMatSEXP, SEXP n_covSEXP, SEXP testnSEXP, SEXP ndSEXP, SEXP burnSEXP, SEXP numtreesSEXP, SEXP xi1SEXP) {
+List mybartpred(int Gcomp, NumericVector L1, NumericVector L2, NumericVector L3, NumericVector L4, NumericVector L5, NumericVector L6, NumericVector L7, NumericVector L8, NumericMatrix testXMat, int n_cov, int testn, int nthin, int nd, int npost, int burn, int numtrees, NumericMatrix xi1);
+RcppExport SEXP _GcompBART_mybartpred(SEXP GcompSEXP, SEXP L1SEXP, SEXP L2SEXP, SEXP L3SEXP, SEXP L4SEXP, SEXP L5SEXP, SEXP L6SEXP, SEXP L7SEXP, SEXP L8SEXP, SEXP testXMatSEXP, SEXP n_covSEXP, SEXP testnSEXP, SEXP nthinSEXP, SEXP ndSEXP, SEXP npostSEXP, SEXP burnSEXP, SEXP numtreesSEXP, SEXP xi1SEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -53,11 +53,13 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< NumericMatrix >::type testXMat(testXMatSEXP);
     Rcpp::traits::input_parameter< int >::type n_cov(n_covSEXP);
     Rcpp::traits::input_parameter< int >::type testn(testnSEXP);
+    Rcpp::traits::input_parameter< int >::type nthin(nthinSEXP);
     Rcpp::traits::input_parameter< int >::type nd(ndSEXP);
+    Rcpp::traits::input_parameter< int >::type npost(npostSEXP);
     Rcpp::traits::input_parameter< int >::type burn(burnSEXP);
     Rcpp::traits::input_parameter< int >::type numtrees(numtreesSEXP);
     Rcpp::traits::input_parameter< NumericMatrix >::type xi1(xi1SEXP);
-    rcpp_result_gen = Rcpp::wrap(mybartpred(Gcomp, L1, L2, L3, L4, L5, L6, L7, L8, testXMat, n_cov, testn, nd, burn, numtrees, xi1));
+    rcpp_result_gen = Rcpp::wrap(mybartpred(Gcomp, L1, L2, L3, L4, L5, L6, L7, L8, testXMat, n_cov, testn, nthin, nd, npost, burn, numtrees, xi1));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -255,7 +257,7 @@ END_RCPP
 
 static const R_CallMethodDef CallEntries[] = {
     {"_GcompBART_mybartmod", (DL_FUNC) &_GcompBART_mybartmod, 20},
-    {"_GcompBART_mybartpred", (DL_FUNC) &_GcompBART_mybartpred, 16},
+    {"_GcompBART_mybartpred", (DL_FUNC) &_GcompBART_mybartpred, 18},
     {"_GcompBART_mympbartmod", (DL_FUNC) &_GcompBART_mympbartmod, 23},
     {"_GcompBART_mympbartmod1", (DL_FUNC) &_GcompBART_mympbartmod1, 23},
     {"_GcompBART_mympbartmod2", (DL_FUNC) &_GcompBART_mympbartmod2, 25},

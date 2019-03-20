@@ -5,8 +5,8 @@ mybartmod <- function(XMat, sigest, nn, y, n_cov, nu, lambda, nd, burn, numtrees
     .Call('_GcompBART_mybartmod', PACKAGE = 'GcompBART', XMat, sigest, nn, y, n_cov, nu, lambda, nd, burn, numtrees, kfac, pswap, pbd, pb, alpha, beta, nc, minobs, binaryX, dgn)
 }
 
-mybartpred <- function(Gcomp, L1, L2, L3, L4, L5, L6, L7, L8, testXMat, n_cov, testn, nd, burn, numtrees, xi1) {
-    .Call('_GcompBART_mybartpred', PACKAGE = 'GcompBART', Gcomp, L1, L2, L3, L4, L5, L6, L7, L8, testXMat, n_cov, testn, nd, burn, numtrees, xi1)
+mybartpred <- function(Gcomp, L1, L2, L3, L4, L5, L6, L7, L8, testXMat, n_cov, testn, nthin, nd, npost, burn, numtrees, xi1) {
+    .Call('_GcompBART_mybartpred', PACKAGE = 'GcompBART', Gcomp, L1, L2, L3, L4, L5, L6, L7, L8, testXMat, n_cov, testn, nthin, nd, npost, burn, numtrees, xi1)
 }
 
 mympbartmod <- function(XMat, sigmai1, V1, nu, nn, nndim, y1, n_cov, nd, burn, numtrees, nSigDr, kfac, pswap, pbd, pb, alpha, beta, nc, minobs, binaryX, dgn, Jiao) {
