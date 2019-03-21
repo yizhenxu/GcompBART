@@ -80,6 +80,7 @@ List mybartpred(int Gcomp,
   /* Initialize counters for outputs psigmasample, vec_test */
   int countvectest = 0;
   int thincount = nthin;
+  int countdraw  = 0
   
   for(int loop=0;loop<(npost+burn);loop++) { /* Start posterior draws */
     
@@ -151,7 +152,8 @@ List mybartpred(int Gcomp,
         }
         
         if(Gcomp == 1){
-          testXMat1 = testXMat(Rcpp::Range(countvectest*testn, (countvectest+1)*testn - 1), Rcpp::Range(0, n_cov - 1));
+          testXMat1 = testXMat(Rcpp::Range(countdraw*testn, (countdraw+1)*testn - 1), Rcpp::Range(0, n_cov - 1));
+          countdraw++;
           for(size_t j=0;j<m;j++) {
             fit(t[j], testXMat1, dip, xi, fpredtemp);
             for(size_t k=0;k<dip.n_samp;k++) ppredmeanvec[k] += fpredtemp[k];
