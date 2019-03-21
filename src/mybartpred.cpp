@@ -80,7 +80,7 @@ List mybartpred(int Gcomp,
   /* Initialize counters for outputs psigmasample, vec_test */
   int countvectest = 0;
   int thincount = nthin;
-  int countdraw  = 0
+  int countdraw  = 0;
   
   for(int loop=0;loop<(npost+burn);loop++) { /* Start posterior draws */
     
