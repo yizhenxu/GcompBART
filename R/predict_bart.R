@@ -35,7 +35,7 @@
 #'@import stats
 #'@export
 #'@useDynLib GcompBART
-predict_bart  <- function(obj, nthin = 0, newdata = NULL, Gcomp = FALSE)
+predict_bart  <- function(obj, nthin = NULL, newdata = NULL, Gcomp = FALSE)
 {
   if(is.data.frame(newdata)) newdata = as.matrix(newdata)
   
@@ -70,13 +70,22 @@ predict_bart  <- function(obj, nthin = 0, newdata = NULL, Gcomp = FALSE)
     stop("newdata can not be NULL.")
   }
   
+  if(is.null(nthin)){
+    nthin = 0
+  }
+  
   ntrees = obj$ntrees
   burn = obj$burn
   npost = obj$ndraws
   
   dloc = seq(1, npost, nthin+1)
   ndraws = length(dloc)
-  sigmasample = obj$sigmasample[dloc] #on the scale of original data
+  if(obj$type %in% c("continuous", "binary")){
+    sigmasample = obj$sigmasample[dloc] #on the scale of original data
+  } else {
+    tmp = matrix(obj$sigmasample, nrow = (obj$ndim)^2, ncol = npost)
+    sigmas = tmp[, dloc]
+  }
   
   if(Gcomp){
     testn = testn / ndraws
@@ -84,10 +93,11 @@ predict_bart  <- function(obj, nthin = 0, newdata = NULL, Gcomp = FALSE)
       stop(paste("Error: testn does not equal to n x ndraws (after thinning)."))
   }
   
-  cat("Number of trees: ", paste(ntrees," "), ".\n\n", sep="")
+  cat("\nNumber of trees: ", paste(ntrees," "), ".\n\n", sep="")
   cat("burn-in: ", burn, ".\n\n", sep="")
   cat("Number of posteriors after burn-in: ", npost, ".\n\n", sep="")
   cat("Number of draws after thinning: ", ndraws, ".\n\n", sep="")
+  cat("Number of samples: ", testn, ".\n\n", sep="")
   
   L1 = obj$TreeMod[[1]]
   L2 = obj$TreeMod[[2]]
@@ -198,7 +208,7 @@ predict_bart  <- function(obj, nthin = 0, newdata = NULL, Gcomp = FALSE)
       treefit = cbind(treefit, res$vec_test)
     }
     
-    sigmas = matrix(obj$sigmasample, nrow = (obj$ndim)^2, ncol = ndraws)
+    #sigmas = matrix(obj$sigmasample, nrow = (obj$ndim)^2, ncol = ndraws)
     
     samp_y = lapply(1:ndraws, function(j) getYhat_bart(j, obj$ndim, testn, obj$releveled, obj$maxy, treefit, sigmas, obj$working_param[j]))
     
@@ -250,7 +260,7 @@ predict_bart  <- function(obj, nthin = 0, newdata = NULL, Gcomp = FALSE)
       treefit = cbind(treefit, res$vec_test)
     }
     
-    sigmas = matrix(obj$sigmasample, nrow = (obj$ndim)^2, ncol = ndraws)
+    #sigmas = matrix(obj$sigmasample, nrow = (obj$ndim)^2, ncol = ndraws)
     
     samp_y = lapply(1:ndraws, function(j) getYhat_bart(j, obj$ndim, testn, obj$releveled, obj$maxy, treefit, sigmas, obj$working_param[j]))
     
