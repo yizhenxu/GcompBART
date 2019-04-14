@@ -88,7 +88,12 @@ DiagPlot <- function(bfit, plot_type, byrow = TRUE){
       par(mfrow=c(1,pm1))
       
       for(i in 1:pm1){
-        tmp = bfit$Inclusion_Proportions[i,]
+        if(is.list(bfit$Inclusion_Proportions)){
+          tmp = bfit$Inclusion_Proportions[[i]]
+        } else {
+          tmp = bfit$Inclusion_Proportions[i,]
+        }
+        
         barplot(sort(tmp,decreasing = T), ylab = "Inclusion Proportion", las=2, main=paste0("latent ",i))
       }
       
