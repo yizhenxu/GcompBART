@@ -154,11 +154,10 @@ List mympbartmod(NumericMatrix XMat,
   
   ////////
   std::vector<std::vector<double> > mtemp1;
-  std::vector<std::vector<double> > WishSample,WishSampleTilde,WishSampleInv, SigmaTmp, SigmaTmpInv;
+  std::vector<std::vector<double> > WishSample,WishSampleTilde,WishSampleInv, SigmaTmp;
   WishSampleInv.resize(di.n_dim);
   WishSample.resize(di.n_dim);
   SigmaTmp.resize(di.n_dim);
-  SigmaTmpInv.resize(di.n_dim);
   
   WishSampleTilde.resize(di.n_dim);
   
@@ -170,7 +169,6 @@ List mympbartmod(NumericMatrix XMat,
     mtemp1[j].resize(di.n_dim);
     WishSampleInv[j].resize(di.n_dim);
     SigmaTmp[j].resize(di.n_dim);
-    SigmaTmpInv[j].resize(di.n_dim);
     
   }
   
@@ -354,7 +352,7 @@ List mympbartmod(NumericMatrix XMat,
       //fit(t[ntree][k], XMat, di, xi, ftemp[ntree][k]);
       for(size_t i=0;i<di.n_samp;i++) {
         allfit[k][i] -= ftemp[ntree][k][i];
-        rtemp[k][i] = wtilde[k][i] - allfit[k][i];
+        rtemp[k][i] = w[i*di.n_dim + k] - allfit[k][i];
       }
     }
     
@@ -367,7 +365,7 @@ List mympbartmod(NumericMatrix XMat,
     
     for(size_t k=0; k<di.n_dim; k++){
       di.y = &r[k][0];
-      pi.sigma = sqrt(alpha2)*condsig[k]; //sqrt psi_k tilde
+      pi.sigma = condsig[k]; //sqrt psi_k tilde
       
       if(dgn){
         bd1(XMat, t[ntree][k], xi, di, pi, minobsnode, binaryX, &nLtDtmp[k][ntree], &percAtmp[k][ntree], &numNodestmp[k][ntree], &numLeavestmp[k][ntree], &treeDepthtmp[k][ntree], incProptmp[k], L1[k], L2[k], L3[k], L4[k], L5[k], L6[k], L7[k], L8[k]);
@@ -398,7 +396,7 @@ List mympbartmod(NumericMatrix XMat,
   for(size_t i=0;i<di.n_samp;i++){
     for(size_t j=0;j<di.n_dim;j++){
       for(size_t k=0;k<di.n_dim;k++){
-        WishMat1[j][k] += (wtilde[j][i]-allfit[j][i])* (wtilde[k][i] - allfit[k][i]);
+        WishMat1[j][k] += (wtilde[j][i]-sqrt(alpha2)*allfit[j][i])* (wtilde[k][i] - sqrt(alpha2)*allfit[k][i]);
       }
     }
   }
@@ -439,7 +437,7 @@ List mympbartmod(NumericMatrix XMat,
       // difine zir
       for(size_t i=0;i<di.n_samp;i++){
         for(size_t j=0;j<di.n_dim;j++){
-          zir[j][i] = wtilde[j][i]- (1 - sqrt(alpha2/alpha2old))* allfit[j][i]; //see pseudocode for explanation
+          zir[j][i] = wtilde[j][i]- (1 - sqrt(alpha2/alpha2old))* sqrt(alpha2old)*allfit[j][i]; //see pseudocode for explanation
         }
       }
       // condition 10 should exist for every training sample
@@ -487,8 +485,8 @@ List mympbartmod(NumericMatrix XMat,
   /* Step 3 (e) and (f) */
   for(size_t i=0; i<di.n_samp; i++){
     for(size_t k=0; k < di.n_dim; k++){
-      mu[i*di.n_dim + k] = allfit[k][i]/sqrt(alpha2); //divide allfit to transform
-      w[i*di.n_dim +k] = allfit[k][i]/sqrt(alpha2old) + (wtilde[k][i]-allfit[k][i]) /sqrt(alpha2) ;
+      mu[i*di.n_dim + k] = allfit[k][i]*sqrt(alpha2old)/sqrt(alpha2); //divide allfit to transform
+      w[i*di.n_dim +k] = allfit[k][i] + (wtilde[k][i]-sqrt(alpha2old)*allfit[k][i]) /sqrt(alpha2) ;
     }
   }
   
@@ -496,8 +494,10 @@ List mympbartmod(NumericMatrix XMat,
   for(size_t j=0;j<di.n_dim;j++){
     for(size_t k=0;k<di.n_dim;k++){
       sigmai[j*di.n_dim + k] = WishSampleTildeInv[j][k]*alpha2;
-      SigmaTmpInv[j][k] = WishSampleTildeInv[j][k]*alpha2;
-      //SigmaTmp[j][k] = WishSampleTilde[j][k]/alpha2;
+      SigmaTmp[j][k] = WishSampleTilde[j][k]/alpha2;
+      if(loop>=burn){
+        sigmasample[sigdrawcounter++] = SigmaTmp[j][k];
+      }
     }
   }
   
@@ -533,15 +533,6 @@ List mympbartmod(NumericMatrix XMat,
         }
       }//k
     }//dgn
-    
-    dinv(SigmaTmpInv ,di.n_dim,SigmaTmp);
-    for(size_t j=0;j<di.n_dim;j++){
-      for(size_t k=0;k<di.n_dim;k++){
-        sigmasample[sigdrawcounter] = SigmaTmp[j][k];
-        sigdrawcounter++;
-      }
-    }
-    
     
     for(size_t k = 0; k <di.n_samp; k++){
       max_temp = R_NegInf;
@@ -597,14 +588,14 @@ List mympbartmod(NumericMatrix XMat,
                       Rcpp::Named("Tree_Depth") = treeDepth, 
                       Rcpp::Named("Inclusion_Proportions") = incProp,
                       Rcpp::Named("TreeMod") = TreeMod,
-                      Rcpp::Named("xi") = Rcpp::wrap(xi),
+                      Rcpp::Named("xi") = xi,
                       Rcpp::Named("working_param") = wp,
                       Rcpp::Named("maxy") = maxy) ;
   } else {
     z = List::create( Rcpp::Named("samp_y") = vec_train,
                       Rcpp::Named("sigmasample") = sigmasample,
                       Rcpp::Named("TreeMod") = TreeMod,
-                      Rcpp::Named("xi") = Rcpp::wrap(xi),
+                      Rcpp::Named("xi") = xi,
                       Rcpp::Named("working_param") = wp,
                       Rcpp::Named("maxy") = maxy) ;
   }

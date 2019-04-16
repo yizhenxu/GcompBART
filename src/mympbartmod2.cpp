@@ -706,7 +706,7 @@ List mympbartmod2(NumericMatrix XMat,
   /* Step 3 (e) and (f) */
   for(size_t i=0; i<di.n_samp; i++){
     for(size_t k=0; k < di.n_dim; k++){
-      mu[i*di.n_dim + k] = allfit[k][i]*sqrt(alpha2old)/sqrt(alpha2); //divide allfit this to transform
+      mu[i*di.n_dim + k] = allfit[k][i]*sqrt(alpha2old)/sqrt(alpha2); //divide allfit to transform
       w[i*di.n_dim +k] = allfit[k][i] + (wtilde[k][i]-sqrt(alpha2old)*allfit[k][i]) /sqrt(alpha2) ;
     }
   }

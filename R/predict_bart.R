@@ -229,6 +229,11 @@ predict_bart  <- function(obj, nthin = NULL, newdata = NULL, Gcomp = FALSE)
       obj$working_param = rep(1,lwp)
     }
     
+    if(obj$type == "multinomial0"){
+      lwp = length(obj$working_param)        
+      obj$working_param = rep(1,lwp)
+    }
+    
     treefit = c()
     
     for(i in 1:(obj$ndim)){
@@ -326,7 +331,7 @@ predict_bart  <- function(obj, nthin = NULL, newdata = NULL, Gcomp = FALSE)
     
   }
     
-  if(obj$type %in% c("multinomial","multinomial2","multinomial3")){
+  if(obj$type %in% c("multinomial0","multinomial1","multinomial2","multinomial3")){
     ret = list(treefit = treefit,
                samp_y = samp_y,
                samp_treefit = samp_treefit);

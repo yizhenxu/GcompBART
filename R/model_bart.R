@@ -35,6 +35,7 @@
 #'@param correction Analysis applies correction from Jiao and van Dyk (2015) if TRUE (default); framework from Burgette and Nordheim (2012) is used if FALSE,
 #'@param fitMNP If type is multinomial, then fitMNP is the number of rounds to pre-fit sum-of-trees on the w0 conditional on sigma0, default is zero; if fitMNP is not zero, there must be input for Mcmc w0 and sigma0,
 #'@param bylatent If 0 then trees are updated across latents in the order of trees, otherwise across all trees in the order of latents,
+#'@param Kindo Implement the modified version of MPBART by Kindo et al (2016) if TRUE; our modified MPBART with accelerated convergence is applied if FALSE (default),
 #'@return treefit ndraws x n posterior matrix of the training data sum of trees fit,
 #'@return samp_y ndraws x n posterior matrix of the simulated outcome,
 #'@return sigmasample posterior samples of the error standard deviation.
@@ -71,9 +72,10 @@
 #'@useDynLib GcompBART
 model_bart  <- function(formula = NULL, Yname = NULL, Xname = NULL, data, type, base = NULL,
                       Prior = NULL, Mcmc = NULL, diagnostics = TRUE, 
-                      make.prediction = TRUE, correction = TRUE, fitMNP = NULL, bylatent = NULL)
+                      make.prediction = TRUE, correction = TRUE, fitMNP = NULL, bylatent = NULL,
+                      Kindo = FALSE)
 {
-  if(!is.null(fitMNP)){
+  if(!is.null(fitMNP)){ #first chceck
     if(type != "multinomial"){
       stop("Check type input.")
     } else {
@@ -85,6 +87,14 @@ model_bart  <- function(formula = NULL, Yname = NULL, Xname = NULL, data, type, 
             stop("Number of trees should be an integer vector with length same as Xname")
         type = "multinomial3"
       }
+    }
+  }
+  
+  if(type == "multinomial"){ #second check
+    if(Kindo==FALSE){
+      type = "multinomial0"
+    } else {
+      type = "multinomial1"
     }
   }
   
@@ -228,7 +238,7 @@ model_bart  <- function(formula = NULL, Yname = NULL, Xname = NULL, data, type, 
   } else if(type == "binary"){
     Data = list(y = Y,X = X)
    
-  } else if(type %in% c("multinomial", "multinomial1", "multinomial2","multinomial3")){
+  } else if(type %in% c("multinomial0", "multinomial1", "multinomial2","multinomial3")){
     ### processing Y
     Y <- as.factor(Y)
     lev <- levels(Y)
@@ -380,7 +390,7 @@ model_bart  <- function(formula = NULL, Yname = NULL, Xname = NULL, data, type, 
                            "ndraws" = ndraws,
                            "type" = "binary"), length(res))
     
-  } else if(type == "multinomial"){
+  } else if(type == "multinomial0"){
     res =   mympbartmod(Data$X,
                         sigmai,
                         V,
@@ -416,7 +426,7 @@ model_bart  <- function(formula = NULL, Yname = NULL, Xname = NULL, data, type, 
                            "burn" = burn,
                            "ndraws" = ndraws,
                            "releveled" = relvelved,
-                           "type" = "multinomial"), length(res))
+                           "type" = "multinomial0"), length(res))
     
     
   } else if(type == "multinomial1"){
@@ -455,7 +465,7 @@ model_bart  <- function(formula = NULL, Yname = NULL, Xname = NULL, data, type, 
                            "burn" = burn,
                            "ndraws" = ndraws,
                            "releveled" = relvelved,
-                           "type" = "multinomial"), length(res))
+                           "type" = "multinomial1"), length(res))
     
     
   } else if(type == "multinomial2"){
