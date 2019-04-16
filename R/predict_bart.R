@@ -16,11 +16,11 @@
 #'sigma = 1.0 #y = f(x) + sigma*z , z~N(0,1)
 #'n = 100 #number of observations
 #'set.seed(99)
-#'x=matrix(runif(n*10),n,10) #10 variables, only first 5 matter
-#'newx=matrix(runif(n*10),n,10) 
+#'x=matrix(runif(n*10),2*n,10) #10 variables, only first 5 matter
 #'Ey = f(x)
 #'y=Ey+sigma*rnorm(n)
-#'dat = data.frame(x,y)
+#'tmp = data.frame(x,y)
+#'dat = tmp[1:n,];newx = tmp[(n+1):(2*n), 1:10]
 #'fml = as.formula("y ~ X1+X2+X3+X4+X5+X6+X7+X8+X9+X10")
 #'bfit = model_bart(fml, data = dat, type = "continuous",
 #'                 Prior = list(nu = 3, sigq = 0.9,

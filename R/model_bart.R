@@ -58,7 +58,7 @@
 #'y=Ey+sigma*rnorm(n)
 #'dat = data.frame(x,y)
 #'fml = y ~ X1+X2+X3+X4+X5+X6+X7+X8+X9+X10
-#'bfit = model_bart(fml, data = dat,
+#'bfit = model_bart(fml, data = dat, type = "continuous",
 #'                 Prior = list(nu = 3, sigq = 0.9,
 #'                              ntrees = 100,
 #'                              kfac = 2,

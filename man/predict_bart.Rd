@@ -4,10 +4,12 @@
 \alias{predict_bart}
 \title{Predict Method for BART Fits}
 \usage{
-predict_bart(obj, newdata = NULL, Gcomp = FALSE)
+predict_bart(obj, nthin = NULL, newdata = NULL, Gcomp = FALSE)
 }
 \arguments{
 \item{obj}{Fitted model object from BART_mod,}
+
+\item{nthin}{Number of posterior samples to skip between every two draws,}
 
 \item{newdata}{The data matrix to look for variables with which to predict, typically without the response; if Gcomp equals TRUE, number of rows should equal n x ndraws, where n is the number of subject. For the ith subject, (i, i+n, ..., i+(ndraws-1)n) rows are its simulated posterior outcomes from the previous simulation,}
 
@@ -31,13 +33,13 @@ f = function(x){
 sigma = 1.0 #y = f(x) + sigma*z , z~N(0,1)
 n = 100 #number of observations
 set.seed(99)
-x=matrix(runif(n*10),n,10) #10 variables, only first 5 matter
-newx=matrix(runif(n*10),n,10) 
+x=matrix(runif(n*10),2*n,10) #10 variables, only first 5 matter
 Ey = f(x)
 y=Ey+sigma*rnorm(n)
-dat = data.frame(x,y)
+tmp = data.frame(x,y)
+dat = tmp[1:n,];newx = tmp[(n+1):(2*n), 1:10]
 fml = as.formula("y ~ X1+X2+X3+X4+X5+X6+X7+X8+X9+X10")
-bfit = BART_call(fml, data = dat, test.data = NULL,
+bfit = model_bart(fml, data = dat, type = "continuous",
                 Prior = list(nu = 3, sigq = 0.9,
                              ntrees = 100,
                              kfac = 2,
@@ -46,5 +48,5 @@ bfit = BART_call(fml, data = dat, test.data = NULL,
                              nc = 100, minobsnode = 10),
                 Mcmc = list(burn=100, ndraws = 1000))
 
-newy = predict_bart(bfit, newx)
+newy = predict_bart(obj = bfit, nthin = 0, newdata = newx)
 }

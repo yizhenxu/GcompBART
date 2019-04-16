@@ -7,7 +7,7 @@
 model_bart(formula = NULL, Yname = NULL, Xname = NULL, data, type,
   base = NULL, Prior = NULL, Mcmc = NULL, diagnostics = TRUE,
   make.prediction = TRUE, correction = TRUE, fitMNP = NULL,
-  bylatent = NULL)
+  bylatent = NULL, Kindo = FALSE)
 }
 \arguments{
 \item{formula}{response ~ covariates,}
@@ -56,6 +56,8 @@ The components of Prior are
 \item{fitMNP}{If type is multinomial, then fitMNP is the number of rounds to pre-fit sum-of-trees on the w0 conditional on sigma0, default is zero; if fitMNP is not zero, there must be input for Mcmc w0 and sigma0,}
 
 \item{bylatent}{If 0 then trees are updated across latents in the order of trees, otherwise across all trees in the order of latents,}
+
+\item{Kindo}{Implement the modified version of MPBART by Kindo et al (2016) if TRUE; our modified MPBART with accelerated convergence is applied if FALSE (default),}
 }
 \value{
 treefit ndraws x n posterior matrix of the training data sum of trees fit,
@@ -92,7 +94,7 @@ Ey = f(x)
 y=Ey+sigma*rnorm(n)
 dat = data.frame(x,y)
 fml = y ~ X1+X2+X3+X4+X5+X6+X7+X8+X9+X10
-bfit = model_bart(fml, data = dat,
+bfit = model_bart(fml, data = dat, type = "continuous",
                 Prior = list(nu = 3, sigq = 0.9,
                              ntrees = 100,
                              kfac = 2,

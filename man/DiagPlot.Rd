@@ -38,8 +38,9 @@ set.seed(99)
 x=matrix(runif(n*10),n,10) #10 variables, only first 5 matter
 Ey = f(x)
 y=Ey+sigma*rnorm(n)
+dat = data.frame(x,y)
 fml = as.formula("y ~ X1+X2+X3+X4+X5+X6+X7+X8+X9+X10")
-bfit = BART_call(fml, data = dd, test.data = NULL,
+bfit = model_bart(fml, data = dat, type = "continuous",
                 Prior = list(nu = 3, sigq = 0.9,
                              ntrees = 200,
                              kfac = 2,

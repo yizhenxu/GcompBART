@@ -483,7 +483,7 @@ List mympbartmod2(NumericMatrix XMat,
       }//while
       
       if(itercnt>= nSigDr){
-        std::cout << "\n iteration on Sigma reached upper limit\n";
+        Rprintf("\n iteration on Sigma reached upper limit \n");
       }
       //correction end
     } else {
@@ -684,7 +684,7 @@ List mympbartmod2(NumericMatrix XMat,
     }//while
     
     if(itercnt>= nSigDr){
-      std::cout << "\n iteration on Sigma reached upper limit\n";
+      Rprintf("\n iteration on Sigma reached upper limit \n");
     }
     //correction end
   } else {
@@ -744,7 +744,6 @@ List mympbartmod2(NumericMatrix XMat,
         
         double numsplits = 0;
         for(size_t i=0; i<di.n_cov; i++){
-          //std::cout<< "loop"<<loop<<" "<<incProptmp[i] <<" \n";
           numsplits += incProptmp[k][i];
         }
         for(size_t i=0; i<di.n_cov; i++){
@@ -781,7 +780,6 @@ List mympbartmod2(NumericMatrix XMat,
       }
       vec_train[countvectrain] = pclass;
       countvectrain++;
-      //cout << "pclass: " << pclass << endl;
     }//end prediction for train
     
   }//end prediction for current loop
