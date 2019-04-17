@@ -120,10 +120,7 @@ List mympbartmod1(NumericMatrix XMat,
     r[k].resize(di.n_samp);
     rtemp[k].resize(di.n_samp);
   }
-  
-  std::vector<double> condsig;
-  condsig.resize(di.n_dim);
-  
+
   pinfo pi;
   pi.pswap = pswap; //prob of swap move, default 0.1
   pi.pbd = pbd; //prob of birth/death move, default 0.5
@@ -293,6 +290,42 @@ List mympbartmod1(NumericMatrix XMat,
     mu[i] = 0;
   }
   
+  //////// For faster tree fitting
+  //initialize PerSigInv List for bytree posterior updates
+  std::vector<std::vector<std::vector<double> > > PerSigInvList; /*Inverse of permuted Sigma*/
+  PerSigInvList.resize(nndim);
+  
+  for(int i=0; i < nndim; i++){
+    PerSigInvList[i].resize(nndim);
+  }
+  
+  for(int i=0; i < nndim; i++){
+    for(int j=0; j < nndim; j++){
+      PerSigInvList[i][j].resize(nndim);
+    }
+  }
+  
+  double cvar;//squared condsig at each latent
+  
+  std::vector<double> condsig;
+  condsig.resize(di.n_dim);
+  
+  //initialize vtemp = (w - allfit)[-k] 
+  std::vector<double> vtemp;
+  vtemp.resize(nndim - 1);
+  
+  std::vector<std::vector<double> > stemp0; /* The second term in pseudo outcome for bytree*/
+  stemp0.resize(di.n_dim);
+  for(size_t k=0; k<di.n_dim; k++){
+    stemp0[k].resize(di.n_samp);
+  }
+  
+  for(size_t k=0; k<di.n_dim; k++){
+    for(size_t i=0;i<di.n_samp;i++) {
+      stemp0[k][i] = 0.0;
+    }
+  }
+  
   //MCMC
   
   time_t tp;
@@ -355,7 +388,7 @@ List mympbartmod1(NumericMatrix XMat,
   
   /* Step 2 */
   /* See tree sampling theory.doc for explanation */
-  for(size_t ntree = 0 ; ntree <m; ntree++){
+  /*for(size_t ntree = 0 ; ntree <m; ntree++){
     for(size_t k=0; k<di.n_dim; k++){
       //fit(t[ntree][k], XMat, di, xi, ftemp[ntree][k]);
       for(size_t i=0;i<di.n_samp;i++) {
@@ -363,13 +396,10 @@ List mympbartmod1(NumericMatrix XMat,
         rtemp[k][i] = wtilde[k][i] - allfit[k][i];
       }
     }
-    
-    
+ 
     //get pseudo response
     getpseudoresponse(di, ftemp[ntree], rtemp, &sigmaiTilde[0], r,condsig);
     //condsig[k] is sqrt psi_k
-    
-    
     
     for(size_t k=0; k<di.n_dim; k++){
       di.y = &r[k][0];
@@ -388,7 +418,56 @@ List mympbartmod1(NumericMatrix XMat,
     }
     
   }//ntree
+  */
+  //////// For faster tree fitting
+  for(int k=0; k < nndim; k++){
+    dinvperm( &sigmaiTilde[0], nndim, k, PerSigInvList[k]);
+    cvar=1/PerSigInvList[k][nndim-1][nndim-1];
+    condsig[k]=sqrt(cvar);//condsig[k] is sqrt psi_k
+  }
   
+  for(int ntree = 0 ; ntree < numtrees; ntree++){
+    
+    for(int k=0; k < nndim; k++){
+      
+      for(int i=0;i < nn; i++) {
+        itemp = 0;
+        for(int j=0;j < nndim; j++){
+          if(j != k)
+            vtemp[itemp++] = wtilde[j][i] - allfit[j][i];
+        }
+        stemp0[k][i] = 0;
+        for(int j=0; j < (nndim-1); j++){
+          stemp0[k][i] += PerSigInvList[k][nndim-1][j]*vtemp[j]*condsig[k]*condsig[k];//pow() requires cmath.h
+        }
+      }//i
+    }//k
+    
+    for(int k=0; k < nndim; k++){//start the tree update for ntree at dim k
+      
+      for(int i=0; i < nn; i++){     
+        allfit[k][i] -= ftemp[ntree][k][i];
+        r[k][i] = wtilde[k][i] - allfit[k][i] + stemp0[k][i];
+      }
+      
+      //update tree
+      di.y = &r[k][0];
+      pi.sigma = condsig[k];
+      
+      if(dgn){
+        bd1(XMat, t[ntree][k], xi, di, pi, minobsnode, binaryX, &nLtDtmp[k][ntree], &percAtmp[k][ntree], &numNodestmp[k][ntree], &numLeavestmp[k][ntree], &treeDepthtmp[k][ntree], incProptmp[k], L1[k], L2[k], L3[k], L4[k], L5[k], L6[k], L7[k], L8[k]);
+      } else {
+        bd(XMat, t[ntree][k], xi, di, pi, minobsnode, binaryX, L1[k], L2[k], L3[k], L4[k], L5[k], L6[k], L7[k], L8[k]);
+      }
+      
+      fit(t[ntree][k], XMat, di, xi, ftemp[ntree][k]);
+      for(int i=0;i < nn;i++) {
+        allfit[k][i] += ftemp[ntree][k][i]	;
+      }
+      
+    }//for nndim
+    
+  }//ntree
   
   //done sampling (T,M)
   

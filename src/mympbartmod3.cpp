@@ -476,7 +476,7 @@ List mympbartmod3(NumericMatrix& XMat1,
             }
             
             di.y = &r[k][0];
-            //pi.sigma = sqrt(alpha2)*condsig[k]; //sqrt psi_k tilde
+            //sqrt(alpha2)*condsig[k]; //sqrt psi_k tilde
             pi.sigma = condsig[k];
             pi.tau=tauList[k];
             
