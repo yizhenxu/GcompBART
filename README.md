@@ -10,4 +10,4 @@ This integrated tool can be used when the time-varying confounders and the outco
 
 2. Accelerated Multinomial Probit Bayesian Additive Regression Trees (MPBART)
 
-The model for multinomial response uses the multinomial probit (MNP) regression framework (Imai and van Dyk 2005). In this package I improved the original MPBART (Kindo et al 2016) so the MCMC convergence is much improved.
+The model for multinomial response uses the multinomial probit (MNP) regression framework (Imai and van Dyk 2005). In this package I improved the original MPBART (Kindo et al 2016) so the MCMC convergence is significantly faster.
