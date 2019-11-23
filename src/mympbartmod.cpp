@@ -186,6 +186,29 @@ List mympbartmod(NumericMatrix XMat,
     WishSampleTildeInv[j].resize(di.n_dim);
   }
   
+  /*prior added*/
+  NumericVector sigmasample_prior(nndim*nndim*nd);
+  int sigdrawcounter_prior = 0;
+  double alpha2_prior;
+  std::vector<std::vector<double> > WishMat1_prior, WishSampleTilde_prior, WishMat1Inv_prior, WishSampleTildeInv_prior;
+  
+  WishMat1_prior.resize(di.n_dim);
+  WishSampleTilde_prior.resize(di.n_dim);
+  WishSampleTildeInv_prior.resize(di.n_dim);
+  for(size_t j=0;j<di.n_dim;j++){
+    WishMat1_prior[j].resize(di.n_dim);
+    WishSampleTilde_prior[j].resize(di.n_dim);
+    WishSampleTildeInv_prior[j].resize(di.n_dim);
+  }
+  
+  for(size_t j=0;j<di.n_dim;j++){
+    for(size_t k=0;k<di.n_dim;k++){
+      WishMat1_prior[j][k] = V[k*di.n_dim + j] ;
+    }
+  }
+  dinv(WishMat1_prior ,di.n_dim, WishMat1Inv_prior);
+  /*prior end*/
+  
   //parameters for correction from Jiao & van Dyk 2015
   size_t check_temp;
   size_t max_class_zir = 0;
@@ -492,7 +515,6 @@ List mympbartmod(NumericMatrix XMat,
     }
   }
   
-  
   dinv(WishMat1 ,di.n_dim,WishMat1Inv);
   
   /* keep the old alpha2 from step 1 sampling (w,alpha)*/
@@ -566,7 +588,6 @@ List mympbartmod(NumericMatrix XMat,
     
   }
   
-  
   /* Step 3 (e) and (f) */
   for(size_t i=0; i<di.n_samp; i++){
     for(size_t k=0; k < di.n_dim; k++){
@@ -599,7 +620,27 @@ List mympbartmod(NumericMatrix XMat,
       numLeaves(k, loop) /= m;
       treeDepth(k, loop) /= m;
     }
-  }
+    
+    /*prior added*/
+    
+    if(loop>=burn){
+      // generate inverse Sigma Tilde
+      rWish(WishSampleTildeInv_prior, WishMat1Inv_prior, (int) nu, (int)di.n_dim);
+      // invert to get Sigma Tilde
+      dinv(WishSampleTildeInv_prior ,di.n_dim, WishSampleTilde_prior);
+      alpha2_prior = 0;
+      for(size_t j=0; j< di.n_dim; j++) alpha2_prior += (WishSampleTilde_prior[j][j]);
+      alpha2_prior = alpha2_prior/double(di.n_dim);
+      
+      for(size_t j=0;j<di.n_dim;j++){
+        for(size_t k=0;k<di.n_dim;k++){
+          sigmasample_prior[sigdrawcounter_prior++] = WishSampleTilde_prior[j][k]/alpha2_prior;
+        }
+      }
+    }//end loop>=burn
+    /*prior end*/
+    
+  }//dgn
   
   if(loop>=burn){
     
@@ -665,6 +706,7 @@ List mympbartmod(NumericMatrix XMat,
   if(dgn){
     z = List::create( Rcpp::Named("samp_y") = vec_train, 
                       Rcpp::Named("sigmasample") = sigmasample,
+                      Rcpp::Named("sigmasample_prior") = sigmasample_prior,
                       Rcpp::Named("Percent_Acceptance") = percA, 
                       Rcpp::Named("Tree_Num_Nodes") = numNodes, 
                       Rcpp::Named("Tree_Num_Leaves") = numLeaves, 
