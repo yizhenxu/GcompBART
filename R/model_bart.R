@@ -391,6 +391,7 @@ model_bart  <- function(formula = NULL, Yname = NULL, Xname = NULL, data, type, 
                            "type" = "binary"), length(res))
     
   } else if(type == "multinomial0"){
+
     res =   mympbartmod(Data$X,
                         sigmai,
                         V,
