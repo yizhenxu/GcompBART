@@ -334,6 +334,30 @@ List mympbartmod1(NumericMatrix XMat,
   /* Initialize counters for outputs sigmasample, vec_test and vec_train */
   int countvectrain = 0;
   
+  /*prior added*/
+  NumericVector sigmasample_prior(nndim*nndim*nd);
+  int sigdrawcounter_prior = 0;
+  double alpha2_prior;
+  std::vector<std::vector<double> > WishMat1_prior, WishSampleTilde_prior, WishMat1Inv_prior, WishSampleTildeInv_prior;
+  
+  WishMat1_prior.resize(di.n_dim);
+  WishSampleTilde_prior.resize(di.n_dim);
+  WishSampleTildeInv_prior.resize(di.n_dim);
+  for(size_t j=0;j<di.n_dim;j++){
+    WishMat1_prior[j].resize(di.n_dim);
+    WishSampleTilde_prior[j].resize(di.n_dim);
+    WishSampleTildeInv_prior[j].resize(di.n_dim);
+  }
+  
+  for(size_t j=0;j<di.n_dim;j++){
+    for(size_t k=0;k<di.n_dim;k++){
+      WishMat1_prior[j][k] = V1(j,k) ;
+    }
+  }
+  
+  dinv(WishMat1_prior ,di.n_dim, WishMat1Inv_prior);
+  
+  /*prior end*/
   
   for(int loop=0;loop < tnd;loop++) { /* Start posterior draws */
   
@@ -601,7 +625,30 @@ List mympbartmod1(NumericMatrix XMat,
       numLeaves(k, loop) /= m;
       treeDepth(k, loop) /= m;
     }
-  }
+    
+    /*prior added*/
+    
+    if(loop>=burn){
+      // generate inverse Sigma Tilde
+      rWish(WishSampleTildeInv_prior, WishMat1Inv_prior, (int) nu, (int)di.n_dim);
+      // invert to get Sigma Tilde
+      dinv(WishSampleTildeInv_prior ,di.n_dim, WishSampleTilde_prior);
+      
+      alpha2_prior = 0;
+      for(size_t j=0; j< di.n_dim; j++) alpha2_prior += (WishSampleTilde_prior[j][j]);
+      alpha2_prior = alpha2_prior/double(di.n_dim);
+      
+      for(size_t j=0;j<di.n_dim;j++){
+        for(size_t k=0;k<di.n_dim;k++){
+          sigmasample_prior[sigdrawcounter_prior] = WishSampleTilde_prior[j][k]/alpha2_prior;
+          //Rcpp::Rcout << "sigprior,alpha2: " << sigdrawcounter_prior << " "<< sigmasample_prior[sigdrawcounter_prior]  << " " <<  alpha2_prior<< " calc "<<WishSampleTilde_prior[j][k]/alpha2_prior << std::endl;
+          sigdrawcounter_prior ++;
+        }
+      }
+    }//end loop>=burn
+    /*prior end*/
+    
+  }//dgn
   
   if(loop>=burn){
     
