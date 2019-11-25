@@ -714,6 +714,7 @@ List mympbartmod1(NumericMatrix XMat,
   if(dgn){
     z = List::create( Rcpp::Named("samp_y") = vec_train, 
                       Rcpp::Named("sigmasample") = sigmasample,
+                      Rcpp::Named("sigmasample_prior") = sigmasample_prior,
                       Rcpp::Named("Percent_Acceptance") = percA, 
                       Rcpp::Named("Tree_Num_Nodes") = numNodes, 
                       Rcpp::Named("Tree_Num_Leaves") = numLeaves, 
