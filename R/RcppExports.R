@@ -9,12 +9,12 @@ mybartpred <- function(Gcomp, L1, L2, L3, L4, L5, L6, L7, L8, testXMat, n_cov, t
     .Call('_GcompBART_mybartpred', PACKAGE = 'GcompBART', Gcomp, L1, L2, L3, L4, L5, L6, L7, L8, testXMat, n_cov, testn, nthin, nd, npost, burn, numtrees, xi1)
 }
 
-mympbartmod <- function(XMat, sigmai1, V1, nu, nn, nndim, y1, n_cov, nd, burn, numtrees, nSigDr, kfac, pswap, pbd, pb, alpha, beta, nc, minobs, binaryX, dgn, Jiao) {
-    .Call('_GcompBART_mympbartmod', PACKAGE = 'GcompBART', XMat, sigmai1, V1, nu, nn, nndim, y1, n_cov, nd, burn, numtrees, nSigDr, kfac, pswap, pbd, pb, alpha, beta, nc, minobs, binaryX, dgn, Jiao)
+mympbartmod <- function(XMat, sigmai1, V1, nu, nn, nndim, y1, n_cov, nd, burn, numtrees, nSigDr, kfac, pswap, pbd, pb, alpha, beta, nc, minobs, binaryX, dgn, Jiao, pMDA) {
+    .Call('_GcompBART_mympbartmod', PACKAGE = 'GcompBART', XMat, sigmai1, V1, nu, nn, nndim, y1, n_cov, nd, burn, numtrees, nSigDr, kfac, pswap, pbd, pb, alpha, beta, nc, minobs, binaryX, dgn, Jiao, pMDA)
 }
 
-mympbartmod1 <- function(XMat, sigmai1, V1, nu, nn, nndim, y1, n_cov, nd, burn, numtrees, nSigDr, kfac, pswap, pbd, pb, alpha, beta, nc, minobs, binaryX, dgn, Jiao) {
-    .Call('_GcompBART_mympbartmod1', PACKAGE = 'GcompBART', XMat, sigmai1, V1, nu, nn, nndim, y1, n_cov, nd, burn, numtrees, nSigDr, kfac, pswap, pbd, pb, alpha, beta, nc, minobs, binaryX, dgn, Jiao)
+mympbartmod1 <- function(XMat, sigmai1, V1, nu, nn, nndim, y1, n_cov, nd, burn, numtrees, nSigDr, kfac, pswap, pbd, pb, alpha, beta, nc, minobs, binaryX, dgn, Jiao, pMDA) {
+    .Call('_GcompBART_mympbartmod1', PACKAGE = 'GcompBART', XMat, sigmai1, V1, nu, nn, nndim, y1, n_cov, nd, burn, numtrees, nSigDr, kfac, pswap, pbd, pb, alpha, beta, nc, minobs, binaryX, dgn, Jiao, pMDA)
 }
 
 mympbartmod2 <- function(XMat, sigmai1, V1, nu, nn, nndim, y1, n_cov, nd, burn, numtrees, nSigDr, kfac, pswap, pbd, pb, alpha, beta, nc, minobs, binaryX, dgn, Jiao, w1, fitMNP) {

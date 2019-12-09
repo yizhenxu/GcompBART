@@ -36,7 +36,8 @@ List mympbartmod1(NumericMatrix XMat,
                  int minobs,
                  NumericVector binaryX,
                  int dgn,
-                 int Jiao) {
+                 int Jiao,
+                 int pMDA) {
   
   size_t m = (size_t) numtrees;
   
@@ -374,25 +375,30 @@ List mympbartmod1(NumericMatrix XMat,
   if(loop==0) draww(&w[0], &mu[0], &sigmai[0], &nn,&nndim, &y[0]); /* regenerate w for the initial draw */
   
   /* Step 1 (b) */
-  /* mtemp1 = V x inverse(Sigma) */
-  ss=0;
-  for(size_t j=0;j<di.n_dim;j++){
-    for(size_t k=0;k<di.n_dim;k++) {
-      mtemp1[j][k]=0;
-    }
-  }
   
-  for(size_t i=0;i<di.n_dim;i++){
+  if(pMDA){ //only update alpha2 in Step 3
+    alpha2 = 1;
+  } else { // update alpha2 in Step 1 & Step 3
+    /* mtemp1 = V x inverse(Sigma) */
+    ss=0;
     for(size_t j=0;j<di.n_dim;j++){
-      for(size_t k=0;k<di.n_dim;k++){
-        mtemp1[j][k]+=V[j*di.n_dim + i]*sigmai[i*di.n_dim + k];
+      for(size_t k=0;k<di.n_dim;k++) {
+        mtemp1[j][k]=0;
       }
     }
+    
+    for(size_t i=0;i<di.n_dim;i++){
+      for(size_t j=0;j<di.n_dim;j++){
+        for(size_t k=0;k<di.n_dim;k++){
+          mtemp1[j][k]+=V[j*di.n_dim + i]*sigmai[i*di.n_dim + k];
+        }
+      }
+    }
+    /* ss = trace(V x inverse(Sigma)) */
+    for(size_t j=0;j<di.n_dim;j++) ss+=mtemp1[j][j];
+    /* alpha^2 = trace(V x inverse(Sigma)) / rchisq */
+    alpha2 = ss/(double)R::rchisq((double)nu*di.n_dim);
   }
-  /* ss = trace(V x inverse(Sigma)) */
-  for(size_t j=0;j<di.n_dim;j++) ss+=mtemp1[j][j];
-  /* alpha^2 = trace(V x inverse(Sigma)) / rchisq */
-  alpha2=ss/(double)R::rchisq((double)nu*di.n_dim);
   
   /* Step 1 (c) */
   for(size_t k=0; k<di.n_dim; k++){

@@ -7,7 +7,7 @@
 model_bart(formula = NULL, Yname = NULL, Xname = NULL, data, type,
   base = NULL, Prior = NULL, Mcmc = NULL, diagnostics = TRUE,
   make.prediction = TRUE, correction = TRUE, fitMNP = NULL,
-  bylatent = NULL, Kindo = FALSE)
+  bylatent = NULL, Kindo = FALSE, marginalization = TRUE)
 }
 \arguments{
 \item{formula}{response ~ covariates,}
@@ -58,6 +58,8 @@ The components of Prior are
 \item{bylatent}{If 0 then trees are updated across latents in the order of trees, otherwise across all trees in the order of latents,}
 
 \item{Kindo}{Implement the modified version of MPBART by Kindo et al (2016) if TRUE; our modified MPBART with accelerated convergence is applied if FALSE (default),}
+
+\item{marginalization}{Implement the "partial marginalization" strategy as described in Kindo et al (2016) if TRUE; otherwise, only update the working parameter in covariance matrix sampling,}
 }
 \value{
 treefit ndraws x n posterior matrix of the training data sum of trees fit,
