@@ -36,7 +36,7 @@
 #'@param fitMNP If type is multinomial, then fitMNP is the number of rounds to pre-fit sum-of-trees on the w0 conditional on sigma0, default is zero; if fitMNP is not zero, there must be input for Mcmc w0 and sigma0,
 #'@param bylatent If 0 then trees are updated across latents in the order of trees, otherwise across all trees in the order of latents,
 #'@param Kindo Implement the modified version of MPBART by Kindo et al (2016) if TRUE; our modified MPBART with accelerated convergence is applied if FALSE (default),
-#'@param marginalization Implement the "partial marginalization" strategy as described in Kindo et al (2016) if TRUE; otherwise, only update the working parameter in covariance matrix sampling,
+#'@param do_alpha2_prior If TRUE, the working parameter is updated with both the latent variables and the covariance matrix sampling; if FALSE, only updated with the covariance matrix sampling,
 #'@return treefit ndraws x n posterior matrix of the training data sum of trees fit,
 #'@return samp_y ndraws x n posterior matrix of the simulated outcome,
 #'@return sigmasample posterior samples of the error standard deviation.
@@ -74,7 +74,7 @@
 model_bart  <- function(formula = NULL, Yname = NULL, Xname = NULL, data, type, base = NULL,
                       Prior = NULL, Mcmc = NULL, diagnostics = TRUE, 
                       make.prediction = TRUE, correction = TRUE, fitMNP = NULL, bylatent = NULL,
-                      Kindo = FALSE, marginalization = TRUE)
+                      Kindo = FALSE, do_alpha2_prior = TRUE)
 {
   if(!is.null(fitMNP)){ #first chceck
     if(type != "multinomial"){
@@ -416,7 +416,7 @@ model_bart  <- function(formula = NULL, Yname = NULL, Xname = NULL, data, type, 
                        binaryX,
                        as.integer(diagnostics),
                        as.integer(correction),
-                       as.integer(marginalization))
+                       as.integer(do_alpha2_prior))
     
     colnames(res$Inclusion_Proportions) = xcolnames
     
@@ -456,7 +456,7 @@ model_bart  <- function(formula = NULL, Yname = NULL, Xname = NULL, data, type, 
                         binaryX,
                         as.integer(diagnostics),
                         as.integer(correction),
-                        as.integer(marginalization))
+                        as.integer(do_alpha2_prior))
     
     colnames(res$Inclusion_Proportions) = xcolnames
     

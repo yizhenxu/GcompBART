@@ -374,9 +374,7 @@ List mympbartmod(NumericMatrix XMat,
   
   /* Step 1 (b) */
   
-  if(pMDA){ //only update alpha2 in Step 3
-    alpha2 = 1;
-  } else { // update alpha2 in Step 1 & Step 3
+  if(pMDA){ // update alpha2 in Step 1 & Step 3
     /* mtemp1 = V x inverse(Sigma) */
     ss=0;
     for(size_t j=0;j<di.n_dim;j++){
@@ -396,6 +394,9 @@ List mympbartmod(NumericMatrix XMat,
     for(size_t j=0;j<di.n_dim;j++) ss+=mtemp1[j][j];
     /* alpha^2 = trace(V x inverse(Sigma)) / rchisq */
     alpha2=ss/(double)R::rchisq((double)nu*di.n_dim);
+    
+  } else { // update alpha2 in Step 3 
+    alpha2 = 1;
   }
   
   /* Step 1 (c) */
