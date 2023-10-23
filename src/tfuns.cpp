@@ -3,6 +3,7 @@
 #endif
 #include <Rconfig.h>
 #include <R_ext/BLAS.h>
+#include <R_ext/Lapack.h>
 #ifndef FCONE
 # define FCONE
 #endif
@@ -13,7 +14,6 @@
 #include <map>
 #include <R.h>
 #include <Rmath.h>
-#include <R_ext/Lapack.h>
 #include "tree.h"
 #include "info.h"
 #include "funs.h"
@@ -633,9 +633,9 @@ void dinv(std::vector<std::vector<double> >& X,
   for (i = 0, j = 0; j < size; j++)
     for (k = 0; k <= j; k++)
       pdInv[i++] = X[k][j];
-  F77_CALL(dpptrf)("U", &size, pdInv, &errorM FCONE FCONE);
+  F77_CALL(dpptrf)("U", &size, pdInv, &errorM FCONE);
   if (!errorM) {
-    F77_CALL(dpptri)("U", &size, pdInv, &errorM FCONE FCONE);
+    F77_CALL(dpptri)("U", &size, pdInv, &errorM FCONE);
     if (errorM) {
       Rprintf("LAPACK dpptri failed, %d\n", errorM);
       Rcpp::stop("Exiting from dinv().\n");
@@ -670,7 +670,7 @@ void dcholdc(std::vector<std::vector<double> >& X, int size, std::vector<std::ve
   for (j = 0, i = 0; j < size; j++)
     for (k = 0; k <= j; k++)
       pdTemp[i++] = X[k][j];
-  F77_CALL(dpptrf)("U", &size, pdTemp, &errorM FCONE FCONE);
+  F77_CALL(dpptrf)("U", &size, pdTemp, &errorM FCONE);
   if (errorM) {
     Rprintf("LAPACK dpptrf failed, %d\n", errorM);
     Rcpp::stop("Exiting from dcholdc().\n");
