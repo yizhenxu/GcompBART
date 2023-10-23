@@ -3,6 +3,9 @@
 #endif
 #include <Rconfig.h>
 #include <R_ext/BLAS.h>
+#ifndef FCONE
+# define FCONE
+#endif
 #include <Rcpp.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -15,9 +18,6 @@
 #include "info.h"
 #include "funs.h"
 #include "bd.h"
-#ifndef FCONE
-# define FCONE
-#endif
 
 /*function to compute the inverse of permuted Sigma */
 void dinvperm(double *sigi,
