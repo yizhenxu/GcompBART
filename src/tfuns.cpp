@@ -1,3 +1,8 @@
+#ifndef  USE_FC_LEN_T
+# define USE_FC_LEN_T
+#endif
+#include <Rconfig.h>
+#include <R_ext/BLAS.h>
 #include <Rcpp.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -10,7 +15,9 @@
 #include "info.h"
 #include "funs.h"
 #include "bd.h"
-
+#ifndef FCONE
+# define FCONE
+#endif
 
 /*function to compute the inverse of permuted Sigma */
 void dinvperm(double *sigi,
@@ -626,9 +633,9 @@ void dinv(std::vector<std::vector<double> >& X,
   for (i = 0, j = 0; j < size; j++)
     for (k = 0; k <= j; k++)
       pdInv[i++] = X[k][j];
-  F77_CALL(dpptrf)("U", &size, pdInv, &errorM);
+  F77_CALL(dpptrf)("U", &size, pdInv, &errorM FCONE FCONE);
   if (!errorM) {
-    F77_CALL(dpptri)("U", &size, pdInv, &errorM);
+    F77_CALL(dpptri)("U", &size, pdInv, &errorM FCONE FCONE);
     if (errorM) {
       Rprintf("LAPACK dpptri failed, %d\n", errorM);
       Rcpp::stop("Exiting from dinv().\n");
@@ -663,7 +670,7 @@ void dcholdc(std::vector<std::vector<double> >& X, int size, std::vector<std::ve
   for (j = 0, i = 0; j < size; j++)
     for (k = 0; k <= j; k++)
       pdTemp[i++] = X[k][j];
-  F77_CALL(dpptrf)("U", &size, pdTemp, &errorM);
+  F77_CALL(dpptrf)("U", &size, pdTemp, &errorM FCONE FCONE);
   if (errorM) {
     Rprintf("LAPACK dpptrf failed, %d\n", errorM);
     Rcpp::stop("Exiting from dcholdc().\n");
