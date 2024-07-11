@@ -12,7 +12,10 @@ This integrated tool can be used when the time-varying confounders and the outco
 
 The model for multinomial response uses the multinomial probit (MNP) regression framework (Imai and van Dyk 2005). In this package I improved the original MPBART (Kindo et al 2016) so the MCMC convergence is significantly faster.
 
-### For  OS X 10.11 and higher, R version 4.3.0 and higher, install gfortran-12.2-universal.pkg  from https://cran.r-project.org/bin/macosx/tools/
+
+** For  OS X 10.11 and higher, R version 4.3.0 and higher, install gfortran-12.2-universal.pkg  from https://cran.r-project.org/bin/macosx/tools/ **
+
+```
 install.packages("devtools") # if you have not installed "devtools" package
 devtools::install_github("yizhenxu/GcompBART")
 
@@ -21,12 +24,13 @@ library(GcompBART)
 nb = 100 # number of burn-in samples
 nd = 1000 # number of post-burn-in posterior draws 
 nt = 100 # nubmer of trees
+```
 
-##############################################
-#### simulate binomial/continuous data #######
-##############################################
+# simulate binomial/continuous data
 
-### simulate data for continuous outcome, binary outcome, and covariates (example from Friedman MARS paper)
+** simulate data for continuous outcome, binary outcome, and covariates (example from Friedman MARS paper)**
+
+```  
 f = function(x){
   10*sin(pi*x[,1]*x[,2]) + 20*(x[,3]-.5)^2+10*x[,4]+5*x[,5]
 }
@@ -40,11 +44,11 @@ Ey = f(x)
 y = Ey+sigma*rnorm(n)
 z = 1*(y > 10)
 dat = data.frame(x,y,z)
+```
 
-##############################################
-######## continuous outcome model ############
-##############################################
+# continuous outcome model
 
+```
 Prior_cont = list(nu = 3, sigq = 0.9,
                   ntrees = nt,
                   kfac = 2,
@@ -61,11 +65,11 @@ bfit_con = model_bart(as.formula(fml), data = dat, type = "continuous",
 
 pred_con = predict_bart(obj = bfit_con, newdata = dat) # prediction using new data
 mean((pred_con$treefit - dat$y)^2) # mean squared error of using the sum of trees as predictions
+```
 
-##############################################
-######## binary outcome model ############
-##############################################
+# binary outcome model
 
+```
 Prior_binary = list(ntrees = nt,
                     kfac = 2,
                     pswap = 0.1, pbd = 0.5, pb = 0.25,
@@ -82,13 +86,13 @@ bfit_bin = model_bart(as.formula(fml), data = dat, type = "binary",
 pred_bin = predict_bart(obj = bfit_bin, newdata = dat) # prediction using new data
 mean(pred_bin$samp_y != dat$z) # misclassification rate of the binary predictions (randomly generated based on the estimated probabilities)
 mean(1*(pred_bin$treefit>0) != dat$z) #misclassification rate of the 1(sum of trees > 0) as binary predictions
+```
 
-##############################################
-######## simulate multinomial data ###########
-##############################################
+# simulate multinomial data
 
-### simulate data for covariates and multinomial outcome (simulation setting 2 of the Accelerated MPBART manuscript) 
+** simulate data for covariates and multinomial outcome (simulation setting 2 of the Accelerated MPBART manuscript) **
 
+```
 n = 1000 # sample size of the training + test sets
 ntr = 500 # sample size of the training set
 f1 = function(x){
@@ -119,11 +123,11 @@ trd = newdat[1:ntr,]
 ted = newdat[(ntr+1):n,]
 table(trd$y)
 table(ted$y)
+```
 
-##############################################
-######## multinomial outcome model ###########
-##############################################
+# multinomial outcome model
 
+```
 Prior_mult = function(p, ntree){
   return(list(nu = p-1+1, V = diag(p-1),
               ntrees = ntree,
@@ -156,7 +160,11 @@ bfit_mult = model_bart(as.formula(fml), data = trd, type = "multinomial",
                    Mcmc = Mcmc_mult(p = p,nb = nb, nd = nd),
                    correction = FALSE, Kindo = FALSE, do_alpha2_prior = FALSE)
 
-# calculate the training and test set predictive accuracy
+```
+
+** calculate the training and test set predictive accuracy **
+
+```
 ymode = function(vec){
   names(which.max(table(vec))) 
 }
@@ -184,3 +192,4 @@ accuracyfun = function(bmpfit,testd,trdy,tedy){
 accuracyfun(bfit_mult, ted, trd$y, ted$y)
 #Train Mean Train Mode  Test Mean  Test Mode 
 #0.873856   0.950000   0.828820   0.890000 
+```
