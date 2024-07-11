@@ -13,7 +13,7 @@ This integrated tool can be used when the time-varying confounders and the outco
 The model for multinomial response uses the multinomial probit (MNP) regression framework (Imai and van Dyk 2005). In this package I improved the original MPBART (Kindo et al 2016) so the MCMC convergence is significantly faster.
 
 
-** For  OS X 10.11 and higher, R version 4.3.0 and higher, install gfortran-12.2-universal.pkg  from https://cran.r-project.org/bin/macosx/tools/ **
+**For  OS X 10.11 and higher, R version 4.3.0 and higher, install gfortran-12.2-universal.pkg  from https://cran.r-project.org/bin/macosx/tools/**
 
 ```
 install.packages("devtools") # if you have not installed "devtools" package
@@ -28,7 +28,7 @@ nt = 100 # nubmer of trees
 
 # simulate binomial/continuous data
 
-** simulate data for continuous outcome, binary outcome, and covariates (example from Friedman MARS paper)**
+**simulate data for continuous outcome, binary outcome, and covariates (example from Friedman MARS paper)**
 
 ```  
 f = function(x){
@@ -90,7 +90,7 @@ mean(1*(pred_bin$treefit>0) != dat$z) #misclassification rate of the 1(sum of tr
 
 # simulate multinomial data
 
-** simulate data for covariates and multinomial outcome (simulation setting 2 of the Accelerated MPBART manuscript) **
+**simulate data for covariates and multinomial outcome (simulation setting 2 of the Accelerated MPBART manuscript)**
 
 ```
 n = 1000 # sample size of the training + test sets
@@ -162,7 +162,7 @@ bfit_mult = model_bart(as.formula(fml), data = trd, type = "multinomial",
 
 ```
 
-** calculate the training and test set predictive accuracy **
+**calculate the training and test set predictive accuracy**
 
 ```
 ymode = function(vec){
